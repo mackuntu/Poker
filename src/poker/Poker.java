@@ -65,7 +65,7 @@ public class Poker extends PApplet {
 			for(int j = 1; j<14; j++)
 			{
 				Card newCard = new Card(j,i);
-				cards.add(new Card(j,i));
+				cards.add(newCard);
 				deckImage[newCard.hashCode()]=allcards.get((j-1)*xoff,(i-1)*yoff,xoff,yoff);
 			}
 		}
