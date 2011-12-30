@@ -16,9 +16,10 @@ public class DeckTests extends TestCase{
 	}
 	public void testStraight()
 	{
-		for(int j = 0; j < 13; j++)
+		for(int j = 1; j < 14; j++)
 		{
-			HandEvaluator hand;
+			for()
+            HandEvaluator hand;
 			ArrayList<Card> deck = new ArrayList<Card>(7);
 			deck.removeAll(deck);
 			for(int i = 0; i < 7; i++)

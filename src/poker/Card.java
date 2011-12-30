@@ -1,6 +1,6 @@
 package poker;
 
-public class Card implements Comparable<Card>
+public class Card
 {
 	public static final int RANKS = 14;
 	
@@ -33,10 +33,8 @@ public class Card implements Comparable<Card>
 	
 	public Card(int num, int suite)
 	{
-		this.num = num;
+		this.num = num-1;
 		this.suite = suite;
-
-		
 	}
 
 	public int hashCode(){
@@ -53,10 +51,5 @@ public class Card implements Comparable<Card>
 	public String toString()
 	{
 		return Card.RANK_NAME[num]+" of " + Card.SUITE_NAME[suite];
-	}
-
-	public int compareTo(Card another) {
-		// TODO Auto-generated method stub
-		return this.hashCode() - another.hashCode();
 	}
 }
