@@ -11,17 +11,18 @@ public class DeckTests extends TestCase{
 	public DeckTests(String name)
 	{
 		super(name);
-		 p = new Poker();
+		p = new Poker();
 		p.populateDeck();
 	}
 	public void testStraight()
 	{
-		for(int j = 0; j < 52; j++)
+		for(int j = 1; j < 14; j++)
 		{
-			HandEvaluator hand;
-			ArrayList<Card> deck = new ArrayList<Card>(5);
+			for()
+            HandEvaluator hand;
+			ArrayList<Card> deck = new ArrayList<Card>(7);
 			deck.removeAll(deck);
-			for(int i = 0; i < 4; i++)
+			for(int i = 0; i < 7; i++)
 			{
 				int tmp = (i+j)%52;
 				deck.add(p.cards.get(tmp));
@@ -35,7 +36,7 @@ public class DeckTests extends TestCase{
 			}
 		}
 	}
-	
+
 	public void testFullHouse()
 	{
 		assertTrue(true);

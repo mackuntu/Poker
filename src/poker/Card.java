@@ -1,13 +1,14 @@
 package poker;
 
-public class Card implements Comparable<Card>
+public class Card
 {
 	public static final int RANKS = 14;
 	
 	public static final int SUITES = 4;
 	
 	public static final String [] RANK_NAME = {
-		"2",
+		"A",
+        "2",
 		"3",
 		"4",
 		"5",
@@ -19,7 +20,6 @@ public class Card implements Comparable<Card>
 		"J",
 		"Q",
 		"K",
-		"A"
 	};
 	
 	public static final String [] SUITE_NAME = {
@@ -33,10 +33,8 @@ public class Card implements Comparable<Card>
 	
 	public Card(int num, int suite)
 	{
-		this.num = 14-num;
-		this.suite = suite-1;
-
-		
+		this.num = num-1;
+		this.suite = suite;
 	}
 
 	public int hashCode(){
@@ -53,10 +51,5 @@ public class Card implements Comparable<Card>
 	public String toString()
 	{
 		return Card.RANK_NAME[num]+" of " + Card.SUITE_NAME[suite];
-	}
-
-	public int compareTo(Card another) {
-		// TODO Auto-generated method stub
-		return this.hashCode() - another.hashCode();
 	}
 }
