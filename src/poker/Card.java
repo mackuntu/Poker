@@ -2,7 +2,7 @@ package poker;
 
 public class Card
 {
-	public static final int RANKS = 14;
+	public static final int RANKS = 13;
 	
 	public static final int SUITES = 4;
 	

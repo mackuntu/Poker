@@ -1,19 +1,20 @@
 package poker;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 public class HandEvaluator {
-	ArrayList<Card> stack = null;
+	HashSet<Card> deck = null;
 	private int size = 5, samenumcount = 1, pairs = 0, rank = 0, straightRank = -1;
 	private boolean ranked = false, flush = false, straight = false;
 	String [] strings = {"high card","pair", "two pair", "triplets", "straight", "flush", "full house", "four of a kind", "straight flush", "royal flush"};
 	private int [] rankings;
 	private int [] suites;
 	
-	public HandEvaluator(ArrayList<Card> stack)
+	public HandEvaluator(HashSet<Card> deck)
 	{
-		this.stack = stack;
+		this.deck = deck;
 		//Collections.sort(this.stack);
-		size = stack.size();
+		size = deck.size();
 		samenumcount = 1;
 		pairs = 0;
 		rank = 0;
@@ -24,12 +25,12 @@ public class HandEvaluator {
 	
 	public HandEvaluator()
 	{
-		this.stack = new ArrayList<Card>(size);
+		this.deck = new HashSet<Card>(size);
 	}
 	
 	public void calcStat()
 	{
-		for(Card c: stack)
+		for(Card c: deck)
 		{
 			rankings[c.getNum()]++;
 			suites[c.getSuite()]++;
@@ -38,9 +39,9 @@ public class HandEvaluator {
 	
 	public void addCard(Card card)
 	{
-		if(stack.size()<size)
+		if(deck.size()<size)
 		{
-			stack.add(card);
+			deck.add(card);
 			size++;
 		}
 		//Collections.sort(this.stack);
@@ -50,8 +51,10 @@ public class HandEvaluator {
 	
 	public int getRanking()
 	{
+		/*
 		if(ranked)
 			return rank;
+			*/
 		if(isRoyalFlush())
 		{
 			ranked = true;
@@ -166,11 +169,12 @@ public class HandEvaluator {
 	{
 		int count = 0;
 		boolean instraight = false;
-		for(int i = 0; i< rankings.length; i++)
+		for(int i = 0; i< rankings.length+1; i++)
 		{
-			if(rankings[i] == 0) // break straight
+			if(rankings[i%rankings.length] == 0) // break straight
 			{
 				instraight = false;
+				count = 0;
 			}
 			else
 			{
@@ -209,7 +213,8 @@ public class HandEvaluator {
 	{
 		int count = 1;
 		int highcount = count;
-		int num = stack.get(0).getNum();
+		
+		/*int num = stack.get(0).getNum();
 		boolean set = false;
 		for(int i = 1; i<stack.size();i++)
 		{
@@ -238,6 +243,7 @@ public class HandEvaluator {
 			pairs++;
 
 		samenumcount = (count>=highcount)? count: highcount;
+		*/
 	}
 	
 

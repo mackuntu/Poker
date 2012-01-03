@@ -1,6 +1,8 @@
 package poker;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+
 import processing.core.*;
 
 
@@ -10,7 +12,7 @@ public class Poker extends PApplet {
 	 */
 	private static final long serialVersionUID = 6687524534858185583L;
 	public ArrayList<Card> cards = new ArrayList<Card>(54);
-	ArrayList<Card> deck = new ArrayList<Card>(5);
+	HashSet<Card> deck = new HashSet<Card>(7);
 	ArrayList<Player> players;
 	PImage[] deckImage = new PImage[54];
 	PImage back;
@@ -23,6 +25,7 @@ public class Poker extends PApplet {
     /* Initialization variables */
 	int xoff = 84;
 	int yoff = 118;
+	int i = 0,j=1;
 	/* END:     DO NOT EDIT */
 	public Poker()
 	{
@@ -35,6 +38,7 @@ public class Poker extends PApplet {
 		populateDeck();
 		myfont = createFont("FFScala", 32);
 		deal();
+		//imageMode(CENTER);
 	}
 	
 	public void populateDeck()
@@ -82,17 +86,23 @@ public class Poker extends PApplet {
 		fill(0);
 		rect(0,0,width,height);
 		
-		for(int i = 0; i < deck.size();i++)
+		for(int i = 0; i < cards.size();i++)
 		{
-			Card tmp = deck.get(i);
+			Card tmp = cards.get(i);
+			image(deckImage[tmp.hashCode()],(i%13)*xoff,i/13*yoff);
+			if(!deck.contains(tmp))
+			{
+				fill(0,120);
+				rect((i%13)*xoff,i/13*yoff,xoff,yoff);
+			}
 		}
 		fill(255);
 		textAlign(CENTER, CENTER);
 		textFont(myfont, 20);
 		text(hand.getString(),width/2,height-20);
-		if(hand.getRanking() < 7)
-			deal();
-		graphFreq();
+
+		
+		//graphFreq();
 	}
 	
 	private void graphFreq()
@@ -113,14 +123,15 @@ public class Poker extends PApplet {
 		stroke(0);
 	}
 	
-	public void keyPressed()
-	{
-		testdeal();
-	}
-	
 	public void mouseClicked()
 	{
-		deal();
+		int num = (mouseX/xoff) + 13*(mouseY/yoff);
+		Card tmp = cards.get(num);
+		if(deck.contains(tmp))
+			deck.remove(tmp);
+		else
+			deck.add(tmp);
+		hand = new HandEvaluator(deck);
 		/*
 		int tmp = hand.getRanking();
 		if(tmp>0)

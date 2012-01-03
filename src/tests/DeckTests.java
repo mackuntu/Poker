@@ -1,6 +1,7 @@
 package tests;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import junit.framework.*;
 
@@ -16,23 +17,22 @@ public class DeckTests extends TestCase{
 	}
 	public void testStraight()
 	{
-		for(int j = 1; j < 14; j++)
+		for(int i = 0; i < 13; i++)
 		{
-			for()
-            HandEvaluator hand;
-			ArrayList<Card> deck = new ArrayList<Card>(7);
-			deck.removeAll(deck);
-			for(int i = 0; i < 7; i++)
+			for(int j = 0; j < 4; j++)
 			{
-				int tmp = (i+j)%52;
-				deck.add(p.cards.get(tmp));
-			}
-			deck.add(p.cards.get((4+j+13)%52));
-			hand = new HandEvaluator(deck);
-			assertTrue(hand.getRanking()== 4);
-			if((j+4) % 13 ==0 && j != 0)
-			{
-				j+= 3;
+	            HandEvaluator hand;
+				HashSet<Card> deck = new HashSet<Card>(7);
+				deck.removeAll(deck);
+				System.out.println("\n==========\nNow testing: ");
+				for(int k = 0; k < 7; k++)
+				{
+					Card tmp = new Card((i+k)%13+1,(j+k)%4);
+					System.out.println(tmp);
+					deck.add(p.cards.get(tmp.hashCode()));
+				}
+				hand = new HandEvaluator(deck);
+				assertTrue(hand.getRanking() == 4);
 			}
 		}
 	}
