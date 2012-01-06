@@ -12,7 +12,7 @@ public class Poker extends PApplet {
 	 */
 	private static final long serialVersionUID = 6687524534858185583L;
 	public ArrayList<Card> cards = new ArrayList<Card>(54);
-	HashSet<Card> deck = new HashSet<Card>(7);
+	ArrayList<Card> deck = new ArrayList<Card>(7);
 	ArrayList<Player> players;
 	PImage[] deckImage = new PImage[54];
 	PImage back;
@@ -100,8 +100,6 @@ public class Poker extends PApplet {
 		textAlign(CENTER, CENTER);
 		textFont(myfont, 20);
 		text(hand.getString(),width/2,height-20);
-
-		
 		//graphFreq();
 	}
 	
@@ -127,11 +125,14 @@ public class Poker extends PApplet {
 	{
 		int num = (mouseX/xoff) + 13*(mouseY/yoff);
 		Card tmp = cards.get(num);
-		if(deck.contains(tmp))
+		if(deck.contains(tmp)){
 			deck.remove(tmp);
-		else
+			hand.removeCard(tmp);
+		}
+		else{
 			deck.add(tmp);
-		hand = new HandEvaluator(deck);
+			hand.addCard(tmp);
+		}
 		/*
 		int tmp = hand.getRanking();
 		if(tmp>0)

@@ -3,58 +3,79 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 public class HandEvaluator {
-	HashSet<Card> deck = null;
-	private int size = 5, samenumcount = 1, pairs = 0, rank = 0, straightRank = -1;
-	private boolean ranked = false, flush = false, straight = false;
+	ArrayList<Card> deck = null;
+	private int pairs, rank;
+	private int [] pairRanks;
+	private int highRank,tripRank,straightRank,flushRank, quadRank;
+	private boolean ranked = false, stringed = false;
 	String [] strings = {"high card","pair", "two pair", "triplets", "straight", "flush", "full house", "four of a kind", "straight flush", "royal flush"};
 	private int [] rankings;
 	private int [] suites;
+	private int [][] suiteRankings;
+	private String handDesc;
 	
-	public HandEvaluator(HashSet<Card> deck)
+	public HandEvaluator(ArrayList<Card> deck)
 	{
 		this.deck = deck;
-		//Collections.sort(this.stack);
-		size = deck.size();
-		samenumcount = 1;
-		pairs = 0;
-		rank = 0;
+		evaluatorInit();
 		this.rankings = new int [Card.RANKS];
 		this.suites = new int [Card.SUITES];
+		this.suiteRankings = new int[Card.SUITES][Card.RANKS];
 		calcStat();
 	}
 	
 	public HandEvaluator()
 	{
-		this.deck = new HashSet<Card>(size);
+		this.deck = new ArrayList<Card>(7);
 	}
 	
+	public void evaluatorInit()
+	{
+		pairs = 0;
+		rank = -1;
+		straightRank = -1;
+		flushRank = -1;
+		tripRank = -1;
+		highRank = -1;
+		quadRank = -1;
+		ranked = false;
+		stringed = false;
+		pairRanks = new int[2];
+	}
 	public void calcStat()
 	{
 		for(Card c: deck)
 		{
 			rankings[c.getNum()]++;
 			suites[c.getSuite()]++;
+			suiteRankings[c.getSuite()][c.getNum()]++;
 		}
 	}
 	
 	public void addCard(Card card)
 	{
-		if(deck.size()<size)
-		{
-			deck.add(card);
-			size++;
-		}
-		//Collections.sort(this.stack);
+		rankings[card.getNum()]++;
+		suites[card.getSuite()]++;
+		suiteRankings[card.getSuite()][card.getNum()]++;
+		evaluatorInit();
 	}
 	
-	
+	public void removeCard(Card card)
+	{
+		rankings[card.getNum()]--;
+		suites[card.getSuite()]--;
+		suiteRankings[card.getSuite()][card.getNum()]--;
+		evaluatorInit();
+	}
 	
 	public int getRanking()
 	{
-		/*
+		if(deck.size()==0)
+		{
+			return 0;
+		}
 		if(ranked)
 			return rank;
-			*/
 		if(isRoyalFlush())
 		{
 			ranked = true;
@@ -117,16 +138,11 @@ public class HandEvaluator {
 		}
 	}
 	
-	public String getString()
-	{
-		return strings[getRanking()];
-	}
-	
 	private boolean isRoyalFlush()
 	{
 		if(isStraightFlush())
 		{
-			return(straightRank == 14);
+			return(straightRank == 0);
 		}
 		return false;
 	}
@@ -141,7 +157,7 @@ public class HandEvaluator {
 	
 	private boolean isPair()
 	{
-		if(pairs == 1)
+		if(pairs >= 1)
 			return true;
 		else
 			return false;
@@ -159,10 +175,18 @@ public class HandEvaluator {
 	{
 		for (int i = 0; i < suites.length; i++)
 		{
-			if(suites[i] == 5)
-				flush = true;
+			if(suites[i] >= 5){
+				for(int j = 13; j>0; j--)
+				{
+					if(suiteRankings[i][j%13]>0)
+					{
+						flushRank = j%13;
+					}
+				}
+				return true;
+			}
 		}
-		return flush;
+		return false;
 	}
 	
 	private boolean isStraight()
@@ -181,12 +205,11 @@ public class HandEvaluator {
 				if (!instraight)
 				{
 					instraight = true;
-					rank = i;
 				}
 				count ++;
 				if( count >= 5)
 				{
-					straightRank = rank;
+					straightRank = i%rankings.length;
 				}
 			}
 		}
@@ -195,13 +218,32 @@ public class HandEvaluator {
 	
 	private boolean isFourofaKind()
 	{
-		countSameNum();
-		return samenumcount == 4;
+		for(int i = 13; i>0; i--)
+		{
+			int tmp = i%rankings.length;
+			if(rankings[tmp] == 4)
+			{
+				quadRank = tmp;
+			}
+			else if(rankings[tmp] == 3 && tripRank == -1)
+			{
+				tripRank = tmp;
+			}
+			else if(rankings[tmp] == 2 && pairs<2)
+			{
+				pairRanks[pairs++] = tmp;
+			}
+			if(rankings[tmp]>0 && highRank == -1)
+			{
+				highRank = tmp;
+			}
+		}
+		return quadRank != -1;
 	}
 	
 	private boolean isTriple()
 	{
-		return samenumcount == 3;
+		return tripRank != -1;
 	}
 	
 	private boolean isTwoPair()
@@ -209,42 +251,50 @@ public class HandEvaluator {
 		return pairs >= 2;
 	}
 	
-	private void countSameNum()
+	public String getString()
 	{
-		int count = 1;
-		int highcount = count;
-		
-		/*int num = stack.get(0).getNum();
-		boolean set = false;
-		for(int i = 1; i<stack.size();i++)
+		if(deck.size() == 0)
 		{
-			if(stack.get(i).getNum()==num)
+			handDesc = "null";
+			stringed = true;
+		}
+		if(!stringed){
+			int tmp = getRanking();
+			handDesc = strings[tmp];
+			switch(tmp)
 			{
-				count++;
-				set = false;
-			}
-			else
-			{
-				num = stack.get(i).getNum();
-				if(count >= highcount)
-				{
-					highcount = count;
-					if(highcount == 2 && !set)
-					{
-						pairs++;
-						set = true;
-					}
-					count = 1;
-				}
-				
+			case 0:
+				handDesc += " of " + Card.RANK_NAME[highRank];
+				break;
+			case 1:
+				handDesc += " of " + Card.RANK_NAME[pairRanks[0]] + "'s";
+				break;
+			case 2: 
+				handDesc += " of " + Card.RANK_NAME[pairRanks[0]]+"'s and " + Card.RANK_NAME[pairRanks[1]] + "'s";
+				break;
+			case 3:
+				handDesc += " of " + Card.RANK_NAME[tripRank] + "'s";
+				break;
+			case 4:
+				handDesc = Card.RANK_NAME[straightRank] + " high " + handDesc;
+				break;
+			case 5: 
+				handDesc = Card.RANK_NAME[flushRank] + " high " + handDesc;
+				break;
+			case 6:
+				handDesc += " with triple " + Card.RANK_NAME[tripRank] + "'s and a pair of " + Card.RANK_NAME[pairRanks[0]] + "'s";
+				break;
+			case 7:
+				handDesc = Card.RANK_NAME[quadRank] + " high " + handDesc;
+				break;
+			case 8:
+				handDesc = Card.RANK_NAME[straightRank] + " high " + handDesc;
+				break;
+			default:
+				break;
 			}
 		}
-		if(count == 2 && !set)
-			pairs++;
-
-		samenumcount = (count>=highcount)? count: highcount;
-		*/
+		return handDesc;
 	}
-	
 
 }

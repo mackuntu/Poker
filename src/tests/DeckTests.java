@@ -22,7 +22,7 @@ public class DeckTests extends TestCase{
 			for(int j = 0; j < 4; j++)
 			{
 	            HandEvaluator hand;
-				HashSet<Card> deck = new HashSet<Card>(7);
+	            ArrayList<Card> deck = new ArrayList<Card>(7);
 				deck.removeAll(deck);
 				System.out.println("\n==========\nNow testing: ");
 				for(int k = 0; k < 7; k++)
