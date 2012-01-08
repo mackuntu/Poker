@@ -3,9 +3,10 @@ package poker;
 import java.util.ArrayList;
 
 public class Player {
-	String name;
-	int money;
-	ArrayList<Card> cards;
+	private String name;
+	private int money;
+	private ArrayList<Card> cards;
+	private HandEvaluator eval;
 	public Player(String name)
 	{
 		this.name = name;
@@ -20,7 +21,11 @@ public class Player {
 	public String getName() {
 		return name;
 	}
-
+	public void reInit()
+	{
+		cards = new ArrayList<Card>(7);
+		eval = null;
+	}
 	public void setName(String name) {
 		this.name = name;
 	}
@@ -28,17 +33,22 @@ public class Player {
 	public int getMoney() {
 		return money;
 	}
-
+	
+	public void addCard(Card c)
+	{
+		cards.add(c);
+		if(eval != null)
+		{
+			eval.addCard(c);
+		}
+	}
+	
+	public void initEval()
+	{
+		this.eval = new HandEvaluator(cards);
+	}
+	
 	public void setMoney(int money) {
 		this.money = money;
 	}
-
-	public ArrayList<Card> getCards() {
-		return cards;
-	}
-
-	public void addCard(Card card) {
-		cards.add(card);
-	}
-
 }

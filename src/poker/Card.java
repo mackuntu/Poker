@@ -29,17 +29,22 @@ public class Card
 		"Club"
 	};
 	
-	private final int num, suite;
+	private final int num, suite, loc;
 	
 	public Card(int num, int suite)
 	{
 		this.num = num-1;
 		this.suite = suite;
+		this.loc = 0;
 	}
 
 	public int hashCode(){
 		return suite*13+num;
 	}
+	public int getLoc() {
+		return loc;
+	}
+
 	public int getNum() {
 		return num;
 	}

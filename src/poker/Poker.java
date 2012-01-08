@@ -11,21 +11,23 @@ public class Poker extends PApplet {
 	 * 
 	 */
 	private static final long serialVersionUID = 6687524534858185583L;
+	private String[] names = {"Martin", "Weipeng", "Carlos", "Kevin", "Andrew", "Jian", "Gordon", "Yifei"};
 	public ArrayList<Card> cards = new ArrayList<Card>(54);
 	ArrayList<Card> deck = new ArrayList<Card>(7);
-	ArrayList<Player> players;
+	ArrayList<Card> burn = new ArrayList<Card>(3);
+	Player[] players;
 	PImage[] deckImage = new PImage[54];
 	PImage back;
 	HandEvaluator hand = null;
 	PFont myfont;
-	int numplayers = 3;
+	int numPlayers = 3;
 	int [] freq = new int[52];
 	int maxfreq;
     /* BEGIN:   DO NOT EDIT */
     /* Initialization variables */
 	int xoff = 84;
 	int yoff = 118;
-	int i = 0,j=1;
+	Dealer dealer;
 	/* END:     DO NOT EDIT */
 	public Poker()
 	{
@@ -37,6 +39,11 @@ public class Poker extends PApplet {
 		size(1176,473+40);
 		populateDeck();
 		myfont = createFont("FFScala", 32);
+		for(int i = 0; i < numPlayers; i++){
+			players[i] = new Player();
+			players[i].setMoney(1000);
+			players[i].setName(names[i]);
+		}
 		deal();
 		//imageMode(CENTER);
 	}
@@ -65,20 +72,44 @@ public class Poker extends PApplet {
 	
 	private void deal()
 	{
-		Dealer d = new Dealer();
-		deck.removeAll(deck); 
-		for(int i = 0; i < 7; i++)
-		{
-			int tmp = d.getCard();
-			if(++freq[tmp] > maxfreq)
-			{
-				maxfreq = freq[tmp];
-			}
-			deck.add(cards.get(tmp));
-			if(deck.size()==5)
-				break;
+		dealer = new Dealer();
+		burn = new ArrayList<Card>(3);
+		for(int i = 0; i < numPlayers; i++){
+			players[i].reInit();
 		}
-		hand = new HandEvaluator(deck);
+		for(int i = 0; i < numPlayers*2; i++){
+			players[i%numPlayers].addCard(cards.get(dealer.getCard()));
+		}
+		dealFlop();
+		for(int i = 0; i < numPlayers; i++)
+		{
+			players[i].initEval();
+		}
+		dealTurnOrRiver();
+		dealTurnOrRiver();
+	}
+	
+	private void dealFlop()
+	{
+		burn.add(cards.get(dealer.getCard()));
+		for(int i = 0; i < 3; i++)
+		{
+			Card tmp = cards.get(dealer.getCard());
+			for(int j = 0; j < numPlayers; j++)
+			{
+				players[j].addCard(tmp);
+			}
+		}
+	}
+	
+	private void dealTurnOrRiver()
+	{
+		burn.add(cards.get(dealer.getCard()));
+		Card tmp = cards.get(dealer.getCard());
+		for(int j = 0; j < numPlayers; j++)
+		{
+			players[j].addCard(tmp);
+		}
 	}
 
 	public void draw()
@@ -86,6 +117,13 @@ public class Poker extends PApplet {
 		fill(0);
 		rect(0,0,width,height);
 		
+		
+		//graphFreq();
+	}
+	
+	
+	private void drawCardWall()
+	{
 		for(int i = 0; i < cards.size();i++)
 		{
 			Card tmp = cards.get(i);
@@ -100,7 +138,6 @@ public class Poker extends PApplet {
 		textAlign(CENTER, CENTER);
 		textFont(myfont, 20);
 		text(hand.getString(),width/2,height-20);
-		//graphFreq();
 	}
 	
 	private void graphFreq()
