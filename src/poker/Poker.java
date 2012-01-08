@@ -13,7 +13,7 @@ public class Poker extends PApplet {
 	private static final long serialVersionUID = 6687524534858185583L;
 	private String[] names = {"Martin", "Weipeng", "Carlos", "Kevin", "Andrew", "Jian", "Gordon", "Yifei"};
 	public ArrayList<Card> cards = new ArrayList<Card>(54);
-	ArrayList<Card> deck = new ArrayList<Card>(7);
+	ArrayList<Card> deck = new ArrayList<Card>(5);
 	ArrayList<Card> burn = new ArrayList<Card>(3);
 	Player[] players;
 	PImage[] deckImage = new PImage[54];
@@ -39,10 +39,13 @@ public class Poker extends PApplet {
 		size(1176,473+40);
 		populateDeck();
 		myfont = createFont("FFScala", 32);
+		players = new Player[numPlayers];
 		for(int i = 0; i < numPlayers; i++){
 			players[i] = new Player();
 			players[i].setMoney(1000);
 			players[i].setName(names[i]);
+			players[i].setX((i%4)*4*xoff);
+			players[i].setY((i/4)*(height-yoff-20));
 		}
 		deal();
 		//imageMode(CENTER);
@@ -73,6 +76,7 @@ public class Poker extends PApplet {
 	private void deal()
 	{
 		dealer = new Dealer();
+		deck = new ArrayList<Card>(5);
 		burn = new ArrayList<Card>(3);
 		for(int i = 0; i < numPlayers; i++){
 			players[i].reInit();
@@ -99,6 +103,7 @@ public class Poker extends PApplet {
 			{
 				players[j].addCard(tmp);
 			}
+			deck.add(tmp);
 		}
 	}
 	
@@ -106,6 +111,7 @@ public class Poker extends PApplet {
 	{
 		burn.add(cards.get(dealer.getCard()));
 		Card tmp = cards.get(dealer.getCard());
+		deck.add(tmp);
 		for(int j = 0; j < numPlayers; j++)
 		{
 			players[j].addCard(tmp);
@@ -116,9 +122,30 @@ public class Poker extends PApplet {
 	{
 		fill(0);
 		rect(0,0,width,height);
-		
-		
-		//graphFreq();
+		for(int i = 0; i < 5; i++)
+		{
+			image(deckImage[deck.get(i).hashCode()],(int)(width/2-2.5*xoff+i*xoff), height/2);
+		}
+		for(int i = 0; i < numPlayers; i++)
+		{
+			ArrayList<Card> playerHand = players[i].getCards();
+			image(deckImage[playerHand.get(0).hashCode()],players[i].x,players[i].y);
+			image(deckImage[playerHand.get(1).hashCode()],players[i].x+xoff,players[i].y);
+		}
+		int winner = 0, highRank = -1; 
+		for(int i = 0; i < numPlayers; i++)
+		{
+			if(players[i].eval() > highRank)
+			{
+				highRank = players[i].eval();
+				winner = i;
+			}
+		}
+		fill(255);
+		textAlign(CENTER, CENTER);
+		textFont(myfont, 20);
+		text("Winner is Player " + winner, width/2, height-40);
+		text(players[winner].getString(),width/2,height-20);
 	}
 	
 	
@@ -158,8 +185,29 @@ public class Poker extends PApplet {
 		stroke(0);
 	}
 	
+	public void keyPressed()
+	{
+		deal();
+	}
+	
 	public void mouseClicked()
 	{
+		
+		int winner = 0, highRank = -1; 
+		for(int i = 0; i < numPlayers; i++)
+		{
+			if(players[i].eval() > highRank)
+			{
+				highRank = players[i].eval();
+				winner = i;
+			}
+		}
+		fill(255);
+		textAlign(CENTER, CENTER);
+		textFont(myfont, 20);
+		text("Winner is Player " + winner, width/2, height/2);
+		text(players[winner].getString(),width/2,height-20);
+		/*
 		int num = (mouseX/xoff) + 13*(mouseY/yoff);
 		Card tmp = cards.get(num);
 		if(deck.contains(tmp)){
@@ -170,6 +218,7 @@ public class Poker extends PApplet {
 			deck.add(tmp);
 			hand.addCard(tmp);
 		}
+		*/
 		/*
 		int tmp = hand.getRanking();
 		if(tmp>0)
