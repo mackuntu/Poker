@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.HashSet;
 public class HandEvaluator {
 	ArrayList<Card> deck = null;
-	private int pairs, rank;
+	private int pairs, bigRank;
 	private int [] pairRanks;
 	private int highRank,tripRank,straightRank,flushRank, quadRank;
 	private boolean ranked = false, stringed = false;
@@ -32,7 +32,7 @@ public class HandEvaluator {
 	public void evaluatorInit()
 	{
 		pairs = 0;
-		rank = -1;
+		bigRank = -1;
 		straightRank = -1;
 		flushRank = -1;
 		tripRank = -1;
@@ -75,65 +75,65 @@ public class HandEvaluator {
 			return 0;
 		}
 		if(ranked)
-			return rank;
+			return bigRank;
 		if(isRoyalFlush())
 		{
 			ranked = true;
-			rank = 9;
+			bigRank = 9;
 			return 9;
 		}
 		else if(isStraightFlush())
 		{
 			ranked = true;
-			rank = 8;
+			bigRank = 8;
 			return 8;
 		}
 		else if(isFourofaKind())
 		{
 			ranked = true;
-			rank = 7;
+			bigRank = 7;
 			return 7;
 		}
 		else if(isFullHouse())
 		{
 			ranked = true;
-			rank = 6;
+			bigRank = 6;
 			return 6;
 		}
 		else if(isFlush())
 		{
 			ranked = true;
-			rank = 5;
+			bigRank = 5;
 			return 5;
 		}
 		else if(isStraight())
 		{
 			ranked = true;
-			rank = 4;
+			bigRank = 4;
 			return 4;
 		}
 		else if(isTriple())
 		{
 			ranked = true;
-			rank = 3;
+			bigRank = 3;
 			return 3;
 		}
 		else if(isTwoPair())
 		{
 			ranked = true;
-			rank = 2;
+			bigRank = 2;
 			return 2;
 		}
 		else if(isPair())
 		{
 			ranked = true;
-			rank = 1;
+			bigRank = 1;
 			return 1;
 		}
 		else
 		{
 			ranked = true;
-			rank = 0;
+			bigRank = 0;
 			return 0;
 		}
 	}
@@ -278,7 +278,7 @@ public class HandEvaluator {
 			case 4:
 				handDesc = Card.RANK_NAME[straightRank] + " high " + handDesc;
 				break;
-			case 5: 
+			case 5:
 				handDesc = Card.RANK_NAME[flushRank] + " high " + handDesc;
 				break;
 			case 6:
