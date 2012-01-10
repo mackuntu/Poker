@@ -40,6 +40,7 @@ public class HandEvaluator {
 		quadRank = -1;
 		ranked = false;
 		stringed = false;
+		rankCode = 0;
 		pairRanks = new int[2];
         flushRank = new int[5];
 		highRank = new int[7];
@@ -102,7 +103,7 @@ public class HandEvaluator {
 		{
 			ranked = true;
 			bigRank = 6;
-            rankCode = tripRank << 4 | pairRank[0]<<3;
+            rankCode = tripRank << 4 | pairRanks[0]<<3;
 		}
 		else if(isFlush())
 		{
@@ -262,6 +263,13 @@ public class HandEvaluator {
 		return pairs >= 2;
 	}
 	
+	public int getRankCode()
+	{
+		ranked = false;
+		getRanking();
+		return rankCode;
+	}
+	
 	public String getString()
 	{
 		if(deck.size() == 0)
@@ -275,7 +283,7 @@ public class HandEvaluator {
 			switch(tmp)
 			{
 			case 0:
-				handDesc += " of " + Card.RANK_NAME[highRank];
+				handDesc += " of " + Card.RANK_NAME[highRank[0]];
 				break;
 			case 1:
 				handDesc += " of " + Card.RANK_NAME[pairRanks[0]] + "'s";
@@ -290,7 +298,7 @@ public class HandEvaluator {
 				handDesc = Card.RANK_NAME[straightRank] + " high " + handDesc;
 				break;
 			case 5:
-				handDesc = Card.RANK_NAME[flushRank] + " high " + handDesc;
+				handDesc = Card.RANK_NAME[flushRank[0]] + " high " + handDesc;
 				break;
 			case 6:
 				handDesc += " with triple " + Card.RANK_NAME[tripRank] + "'s and a pair of " + Card.RANK_NAME[pairRanks[0]] + "'s";

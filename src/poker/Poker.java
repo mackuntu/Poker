@@ -85,12 +85,13 @@ public class Poker extends PApplet {
 			players[i%numPlayers].addCard(cards.get(dealer.getCard()));
 		}
 		dealFlop();
+		dealTurnOrRiver();
+		dealTurnOrRiver();
 		for(int i = 0; i < numPlayers; i++)
 		{
 			players[i].initEval();
 		}
-		dealTurnOrRiver();
-		dealTurnOrRiver();
+		
 	}
 	
 	private void dealFlop()
@@ -132,20 +133,30 @@ public class Poker extends PApplet {
 			image(deckImage[playerHand.get(0).hashCode()],players[i].x,players[i].y);
 			image(deckImage[playerHand.get(1).hashCode()],players[i].x+xoff,players[i].y);
 		}
-		int winner = 0, highRank = -1; 
+		int []winner = new int[numPlayers];
+		int highRank = -1, numWinner = 0; 
 		for(int i = 0; i < numPlayers; i++)
 		{
 			if(players[i].eval() > highRank)
 			{
 				highRank = players[i].eval();
-				winner = i;
+				numWinner = 0;
+				winner[numWinner++] = i;
+			}
+			else if(players[i].eval() == highRank)
+			{
+				winner[numWinner++] = i;
 			}
 		}
 		fill(255);
 		textAlign(CENTER, CENTER);
 		textFont(myfont, 20);
-		text("Winner is Player " + winner, width/2, height-40);
-		text(players[winner].getString(),width/2,height-20);
+		String winningStr="Winner is Player ";
+		for(int i = 0; i < numWinner; i++){
+			winningStr += winner[i] + " ";
+		}
+		text(winningStr, width/2, height-40);
+		text(players[winner[0]].getString(),width/2,height-20);
 	}
 	
 	

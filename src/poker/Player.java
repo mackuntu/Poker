@@ -56,7 +56,7 @@ public class Player {
 	
 	public int eval()
 	{
-		return eval.getRanking();
+		return eval.getRankCode();
 	}
 	
 	public void setMoney(int money) {
