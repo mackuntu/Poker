@@ -20,6 +20,7 @@ public class Card
 		"J",
 		"Q",
 		"K",
+        "A"
 	};
 	
 	public static final String [] SUITE_NAME = {

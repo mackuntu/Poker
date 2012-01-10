@@ -4,9 +4,11 @@ import java.util.Collections;
 import java.util.HashSet;
 public class HandEvaluator {
 	ArrayList<Card> deck = null;
-	private int pairs, bigRank;
+	private int pairs, bigRank, rankCode, highRankCtr;
 	private int [] pairRanks;
-	private int highRank,tripRank,straightRank,flushRank, quadRank;
+	private int tripRank,straightRank,quadRank;
+    private int [] flushRank;
+    private int [] highRank;
 	private boolean ranked = false, stringed = false;
 	String [] strings = {"high card","pair", "two pair", "triplets", "straight", "flush", "full house", "four of a kind", "straight flush", "royal flush"};
 	private int [] rankings;
@@ -34,13 +36,14 @@ public class HandEvaluator {
 		pairs = 0;
 		bigRank = -1;
 		straightRank = -1;
-		flushRank = -1;
 		tripRank = -1;
-		highRank = -1;
 		quadRank = -1;
 		ranked = false;
 		stringed = false;
 		pairRanks = new int[2];
+        flushRank = new int[5];
+		highRank = new int[7];
+        highRankCtr = 0;
 	}
 	public void calcStat()
 	{
@@ -76,73 +79,81 @@ public class HandEvaluator {
 		}
 		if(ranked)
 			return bigRank;
+        else
+            bigRank = 0;
 		if(isRoyalFlush())
 		{
 			ranked = true;
 			bigRank = 9;
-			return 9;
 		}
 		else if(isStraightFlush())
 		{
 			ranked = true;
 			bigRank = 8;
-			return 8;
+            rankCode = straightRank << 4;
 		}
 		else if(isFourofaKind())
 		{
 			ranked = true;
 			bigRank = 7;
-			return 7;
+            rankCode = quadRank << 4;
 		}
 		else if(isFullHouse())
 		{
 			ranked = true;
 			bigRank = 6;
-			return 6;
+            rankCode = tripRank << 4 | pairRank[0]<<3;
 		}
 		else if(isFlush())
 		{
 			ranked = true;
 			bigRank = 5;
-			return 5;
+            for(int i = 0; i < 5; i ++)
+            {
+                rankCode |= flushRank[i] << (4-i);
+            }
 		}
 		else if(isStraight())
 		{
 			ranked = true;
 			bigRank = 4;
-			return 4;
+            rankCode = straightRank << 4;
 		}
 		else if(isTriple())
 		{
 			ranked = true;
 			bigRank = 3;
-			return 3;
+            rankCode = tripRank << 4 | highRank[0] << 3 | highRank[1] << 2;
 		}
 		else if(isTwoPair())
 		{
 			ranked = true;
 			bigRank = 2;
-			return 2;
+            rankCode = pairRanks[0] << 4 | pairRanks[1] << 3 | highRank[0] << 2;
 		}
 		else if(isPair())
 		{
 			ranked = true;
 			bigRank = 1;
-			return 1;
+            rankCode = pairRanks[0] << 4 | highRank[0] << 3 | highRank[1] << 2 | highRank[2] << 1;
 		}
 		else
 		{
-			ranked = true;
-			bigRank = 0;
-			return 0;
+            ranked = true;
+            for(int i = 0; i < 5; i++)
+            {
+                rankCode = highRank[i] << (4-i);
+            }
 		}
+        rankCode |= bigRank<<5;
+        return bigRank;
 	}
 	
 	private boolean isRoyalFlush()
 	{
 		if(isStraightFlush())
 		{
-			return(straightRank == 0);
+			return(straightRank == 13);
 		}
 		return false;
 	}
@@ -176,11 +187,11 @@ public class HandEvaluator {
 		for (int i = 0; i < suites.length; i++)
 		{
 			if(suites[i] >= 5){
-				for(int j = 13; j>0; j--)
+				for(int j = 13, k = 0; j>0 && k < 5; j--)
 				{
 					if(suiteRankings[i][j%13]>0)
 					{
-						flushRank = j%13;
+						flushRank[k++] = j;
 					}
 				}
 				return true;
@@ -209,7 +220,7 @@ public class HandEvaluator {
 				count ++;
 				if( count >= 5)
 				{
-					straightRank = i%rankings.length;
+					straightRank = i;
 				}
 			}
 		}
@@ -223,19 +234,19 @@ public class HandEvaluator {
 			int tmp = i%rankings.length;
 			if(rankings[tmp] == 4)
 			{
-				quadRank = tmp;
+				quadRank = i;
 			}
 			else if(rankings[tmp] == 3 && tripRank == -1)
 			{
-				tripRank = tmp;
+				tripRank = i;
 			}
 			else if(rankings[tmp] == 2 && pairs<2)
 			{
-				pairRanks[pairs++] = tmp;
+				pairRanks[pairs++] = i;
 			}
-			if(rankings[tmp]>0 && highRank == -1)
+			else if(rankings[tmp]>0 && highRankCtr<7)
 			{
-				highRank = tmp;
+				highRank[highRankCtr++] = i;
 			}
 		}
 		return quadRank != -1;
