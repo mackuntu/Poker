@@ -203,21 +203,6 @@ public class Poker extends PApplet {
 	
 	public void mouseClicked()
 	{
-		
-		int winner = 0, highRank = -1; 
-		for(int i = 0; i < numPlayers; i++)
-		{
-			if(players[i].eval() > highRank)
-			{
-				highRank = players[i].eval();
-				winner = i;
-			}
-		}
-		fill(255);
-		textAlign(CENTER, CENTER);
-		textFont(myfont, 20);
-		text("Winner is Player " + winner, width/2, height/2);
-		text(players[winner].getString(),width/2,height-20);
 		/*
 		int num = (mouseX/xoff) + 13*(mouseY/yoff);
 		Card tmp = cards.get(num);

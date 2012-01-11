@@ -34,7 +34,7 @@ public class HandEvaluator {
 	public void evaluatorInit()
 	{
 		pairs = 0;
-		bigRank = -1;
+		bigRank = 0;
 		straightRank = -1;
 		tripRank = -1;
 		quadRank = -1;
@@ -80,8 +80,6 @@ public class HandEvaluator {
 		}
 		if(ranked)
 			return bigRank;
-        else
-            bigRank = 0;
 		if(isRoyalFlush())
 		{
 			ranked = true;
@@ -91,19 +89,19 @@ public class HandEvaluator {
 		{
 			ranked = true;
 			bigRank = 8;
-            rankCode = straightRank << 4;
+            rankCode = straightRank << 16;
 		}
 		else if(isFourofaKind())
 		{
 			ranked = true;
 			bigRank = 7;
-            rankCode = quadRank << 4;
+            rankCode = quadRank << 16;
 		}
 		else if(isFullHouse())
 		{
 			ranked = true;
 			bigRank = 6;
-            rankCode = tripRank << 4 | pairRanks[0]<<3;
+            rankCode = tripRank << 16 | pairRanks[0] << 12;
 		}
 		else if(isFlush())
 		{
@@ -111,42 +109,42 @@ public class HandEvaluator {
 			bigRank = 5;
             for(int i = 0; i < 5; i ++)
             {
-                rankCode |= flushRank[i] << (4-i);
+                rankCode |= flushRank[i] << ((4-i)*4);
             }
 		}
 		else if(isStraight())
 		{
 			ranked = true;
 			bigRank = 4;
-            rankCode = straightRank << 4;
+            rankCode = straightRank << 16;
 		}
 		else if(isTriple())
 		{
 			ranked = true;
 			bigRank = 3;
-            rankCode = tripRank << 4 | highRank[0] << 3 | highRank[1] << 2;
+            rankCode = tripRank << 16 | highRank[0] << 12 | highRank[1] << 8;
 		}
 		else if(isTwoPair())
 		{
 			ranked = true;
 			bigRank = 2;
-            rankCode = pairRanks[0] << 4 | pairRanks[1] << 3 | highRank[0] << 2;
+            rankCode = pairRanks[0] << 16 | pairRanks[1] << 12 | highRank[0] << 8;
 		}
 		else if(isPair())
 		{
 			ranked = true;
 			bigRank = 1;
-            rankCode = pairRanks[0] << 4 | highRank[0] << 3 | highRank[1] << 2 | highRank[2] << 1;
+            rankCode = pairRanks[0] << 16 | highRank[0] << 12 | highRank[1] << 8 | highRank[2] << 4;
 		}
 		else
 		{
             ranked = true;
             for(int i = 0; i < 5; i++)
             {
-                rankCode = highRank[i] << (4-i);
+                rankCode |= highRank[i] << ((4-i)*4);
             }
 		}
-        rankCode |= bigRank<<5;
+        rankCode |= bigRank << 20;
         return bigRank;
 	}
 	
@@ -265,8 +263,10 @@ public class HandEvaluator {
 	
 	public int getRankCode()
 	{
-		ranked = false;
-		getRanking();
+		if(!ranked){
+			evaluatorInit();
+			getRanking();
+		}
 		return rankCode;
 	}
 	
@@ -278,9 +278,8 @@ public class HandEvaluator {
 			stringed = true;
 		}
 		if(!stringed){
-			int tmp = getRanking();
-			handDesc = strings[tmp];
-			switch(tmp)
+			handDesc = strings[bigRank];
+			switch(bigRank)
 			{
 			case 0:
 				handDesc += " of " + Card.RANK_NAME[highRank[0]];
