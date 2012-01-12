@@ -28,7 +28,7 @@ public class Poker extends PApplet {
 	int yoff = 118;
 	Dealer dealer;
 	
-	private int pot, raiseAmount;
+	private int pot, raiseAmount, playerIndex, numFolded;
 	private int dealerPlayer;
 	private enum GameState{
 		start, flop, turn, river, finish
@@ -42,7 +42,8 @@ public class Poker extends PApplet {
 	
 	public void setup()
 	{
-		size(1176,473+40);
+		//size(1176,473+40);
+		size(screen.width,screen.height);
 		populateDeck();
 		myfont = createFont("FFScala", 32);
 		players = new Player[numPlayers];
@@ -54,6 +55,10 @@ public class Poker extends PApplet {
 			players[i].setY((i/4)*(height-yoff-20));
 		}
 		deal();
+		fill(255);
+		textAlign(CENTER, CENTER);
+		textFont(myfont, 20);
+		dealerPlayer = 0;
 		//imageMode(CENTER);
 	}
 	
@@ -86,16 +91,26 @@ public class Poker extends PApplet {
 		burn = new ArrayList<Card>(3);
 		pot = 0;
 		raiseAmount = 0;
+		numFolded = 0;
 		gameState = GameState.start;
+		dealerPlayer=(dealerPlayer+1)%numPlayers;
+		playerIndex = dealerPlayer;
 		for(int i = 0; i < numPlayers; i++){
+			if(players[i].getMoney() == 0)
+				continue;
 			players[i].reInit();
 		}
 		for(int i = 0; i < numPlayers*2; i++){
-			players[i%numPlayers].addCard(cards.get(dealer.getCard()));
+			int tmpIndex = (i+dealerPlayer+1)%numPlayers;
+			if(players[tmpIndex].getMoney() == 0)
+				continue;
+			players[tmpIndex].addCard(cards.get(dealer.getCard()));
 		}
-		for(int i = dealerPlayer+1; i < numPlayers; i++)
+		for(int i = 0; i < numPlayers; i++)
 		{
-			players[i%numPlayers].initEval();
+			if(players[i].getMoney() == 0)
+				continue;
+			players[i].initEval();
 		}
 		
 	}
@@ -108,6 +123,8 @@ public class Poker extends PApplet {
 			Card tmp = cards.get(dealer.getCard());
 			for(int j = 0; j < numPlayers; j++)
 			{
+				if(players[j].isFolded())
+					continue;
 				players[j].addCard(tmp);
 			}
 			deck.add(tmp);
@@ -121,6 +138,8 @@ public class Poker extends PApplet {
 		deck.add(tmp);
 		for(int j = 0; j < numPlayers; j++)
 		{
+			if(players[j].isFolded())
+				continue;
 			players[j].addCard(tmp);
 		}
 	}
@@ -136,9 +155,19 @@ public class Poker extends PApplet {
 		for(int i = 0; i < numPlayers; i++)
 		{
 			ArrayList<Card> playerHand = players[i].getCards();
-			image(deckImage[playerHand.get(0).hashCode()],players[i].x,players[i].y);
-			image(deckImage[playerHand.get(1).hashCode()],players[i].x+xoff,players[i].y);
+			if(playerHand == null){
+				image(back,players[i].x,players[i].y);
+				image(back,players[i].x+xoff,players[i].y);
+			}
+			else{
+				image(deckImage[playerHand.get(0).hashCode()],players[i].x,players[i].y);
+				image(deckImage[playerHand.get(1).hashCode()],players[i].x+xoff,players[i].y);
+			}
 		}
+		fill(255);
+		textAlign(CORNER,CORNER);
+		text("pot = $"+pot, width/2, height-60);
+		//text("stack = $"+stack, width/2, height-80);
 		switch(gameState)
 		{
 		case start:
@@ -146,6 +175,7 @@ public class Poker extends PApplet {
 			{
 				gameState = GameState.flop;
 				dealFlop();
+				newRound();
 			}
 			break;
 		case flop:
@@ -153,6 +183,7 @@ public class Poker extends PApplet {
 			{
 				gameState = GameState.turn;
 				dealTurnOrRiver();
+				newRound();
 			}
 			break;
 		case turn:
@@ -160,6 +191,7 @@ public class Poker extends PApplet {
 			{
 				gameState = GameState.river;
 				dealTurnOrRiver();
+				newRound();
 			}
 			break;
 		case river:
@@ -174,6 +206,17 @@ public class Poker extends PApplet {
 			gameState = GameState.start;
 			break;
 		}
+		
+		noLoop();
+	}
+	
+	private void newRound()
+	{
+		for(int i = 0; i < numPlayers; i++)
+		{
+			players[i].setReady(false);
+		}
+		raiseAmount = 0;
 	}
 	
 	private boolean askAll()
@@ -181,48 +224,82 @@ public class Poker extends PApplet {
 		int numReady = 0;
 		for(int i = 0; i < numPlayers; i++)
 		{
-			if(players[i].isReady())
+			if(numFolded == numPlayers-1)
 			{
+				gameState = GameState.finish;
+				break;
+			}
+			if(players[(playerIndex+1)%numPlayers].isReady())
+			{
+				//text(""+players[i].getAction(), players[i].x,players[i].y+yoff+20);
+				playerIndex++;
 				numReady++;
 			}
 			else
 			{
-				Action playerAct = players[i].getAction();
+				int tmp = (++playerIndex)%numPlayers;
+				if(players[tmp].isFolded())
+					continue;
+				Action playerAct = players[tmp].getAction(raiseAmount);
 				switch (playerAct)
 				{
 				case FOLD:
-					players[i].setFolded();
+					players[tmp].setFolded();
+					numFolded++;
 					numReady++;
 					break;
 				case CALL:
-					if(players[i].commit(raiseAmount))
+					if(players[tmp].commit(raiseAmount))
+					{
 						numReady++;
+					}
 					break;
 				case RAISE:
-					if(players[i].commit(raiseAmount + playerAct.getAmount()))
+					if(players[tmp].commit(playerAct.getAmount() + raiseAmount))
 					{
 						raiseAmount += playerAct.getAmount();
 						for(int j = 0; j < numPlayers; j++)
 						{
-							players[j].setReady(false);
+							if(!players[j].isFolded())
+								players[j].setReady(false);
 						}
-						numReady++;
+						players[tmp].setReady(true);
+						numReady = 1;
 					}
 					break;
 				case CHECK:
 					if(raiseAmount == players[i].getCommited())
 					{
-						players[i].setReady(true);
+						players[tmp].setReady(true);
 						numReady++;
 					}
 					break;
 				}
+				text(""+playerAct, players[tmp].x,players[tmp].y+yoff+20);
+				text("$"+players[tmp].getMoney(),players[tmp].x,players[tmp].y+yoff+40);
+				text("commited = $"+players[tmp].getCommited(),players[tmp].x,players[tmp].y+yoff+60);
 				break;
 			}
 		}
+		
+		if(numFolded == numPlayers-1)
+		{
+			gameState = GameState.finish;
+			for(int i = 0; i < numPlayers; i++)
+			{
+				pot += players[i].getCommited();
+				players[i].clearCommited();
+			}
+			whoWon();
+			return false;
+		}
 		if(numReady == numPlayers)
 		{
-			pot += raiseAmount;
+			for(int i = 0; i < numPlayers; i++)
+			{
+				pot += players[i].getCommited();
+				players[i].clearCommited();
+			}
 			return true;
 		}
 		else
@@ -238,6 +315,8 @@ public class Poker extends PApplet {
 		
 		for(int i = 0; i < numPlayers; i++)
 		{
+			if(players[i].isFolded())
+				continue;
 			if(players[i].eval() > highRank)
 			{
 				highRank = players[i].eval();
@@ -250,9 +329,7 @@ public class Poker extends PApplet {
 			}
 		}
 		winnings = pot/numWinner;
-		fill(255);
-		textAlign(CENTER, CENTER);
-		textFont(myfont, 20);
+		
 		String winningStr="Winner is Player ";
 		for(int i = 0; i < numWinner; i++){
 			winningStr += winner[i] + " ";
@@ -300,7 +377,7 @@ public class Poker extends PApplet {
 	
 	public void keyPressed()
 	{
-		deal();
+		loop();
 	}
 	
 	public void mouseClicked()

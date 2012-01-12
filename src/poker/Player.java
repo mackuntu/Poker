@@ -23,17 +23,18 @@ public class Player {
 	{
 		super();
 	}
-	public Action getAction()
+	public Action getAction(int raiseAmount)
 	{
 		Action newAct;
-		if(eval == null)
-			return Action.FOLD;
-		if(eval.getRanking()>2 && money - commited > 10){
+		if(eval.getRanking()> 0 && money - commited - raiseAmount >= 10){
 			newAct = Action.RAISE;
 			newAct.setAmount(10);
 		}
+		else if (raiseAmount == commited){
+			newAct = Action.CHECK;
+		}
 		else{
-			newAct = Action.CALL;
+			newAct = Action.FOLD;
 		}
 		return newAct;
 	}
@@ -126,18 +127,27 @@ public class Player {
 	public void setFolded() {
 		this.folded = true;
 		this.ready = true;
+		this.cards = null;
 	}
 
 	public int getCommited() {
 		return commited;
 	}
-
+	
+	public void clearCommited()
+	{
+		this.commited = 0;
+	}
+	
 	public boolean commit(int raiseAmount) {
-		if(money >= raiseAmount)
+		if(raiseAmount > commited)
 		{
-			money -= raiseAmount;
-			commited = 0;
-			ready = true;
+			if(money >= raiseAmount - commited)
+			{
+				money -= (raiseAmount-commited);
+				commited = raiseAmount;
+				ready = true;
+			}
 		}
 		return this.ready;
 	}
