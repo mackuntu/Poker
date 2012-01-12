@@ -7,7 +7,12 @@ public class Player {
 	private int money;
 	private ArrayList<Card> cards;
 	private HandEvaluator eval;
+	private boolean ready;
+	private boolean folded;
+	private int commited;
+	
 	public int x,y;
+	
 	public Player(String name)
 	{
 		this.name = name;
@@ -18,7 +23,13 @@ public class Player {
 	{
 		super();
 	}
-
+	public Action getAction()
+	{
+		Action newAct = Action.RAISE;
+		newAct.setAmount(10);
+		return newAct;
+	}
+	
 	public String getName() {
 		return name;
 	}
@@ -26,6 +37,9 @@ public class Player {
 	{
 		cards = new ArrayList<Card>(7);
 		eval = null;
+		ready = false;
+		folded = false;
+		commited = 0;
 	}
 	public void setName(String name) {
 		this.name = name;
@@ -62,6 +76,10 @@ public class Player {
 	public void setMoney(int money) {
 		this.money = money;
 	}
+	
+	public void addMoney(int money) {
+		this.money += money;
+	}
 
 	public int getX() {
 		return x;
@@ -81,5 +99,36 @@ public class Player {
 
 	public ArrayList<Card> getCards() {
 		return cards;
+	}
+
+	public boolean isReady() {
+		return ready;
+	}
+
+	public void setReady(boolean ready) {
+		this.ready = ready;
+	}
+
+	public boolean isFolded() {
+		return folded;
+	}
+
+	public void setFolded() {
+		this.folded = true;
+		this.ready = true;
+	}
+
+	public int getCommited() {
+		return commited;
+	}
+
+	public boolean commit(int raiseAmount) {
+		if(money >= raiseAmount - commited)
+		{
+			money -= raiseAmount - commited;
+			commited = raiseAmount;
+			ready = true;
+		}
+		return this.ready;
 	}
 }
