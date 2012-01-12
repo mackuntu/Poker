@@ -93,9 +93,6 @@ public class Poker extends PApplet {
 		for(int i = 0; i < numPlayers*2; i++){
 			players[i%numPlayers].addCard(cards.get(dealer.getCard()));
 		}
-		dealFlop();
-		dealTurnOrRiver();
-		dealTurnOrRiver();
 		for(int i = dealerPlayer+1; i < numPlayers; i++)
 		{
 			players[i%numPlayers].initEval();

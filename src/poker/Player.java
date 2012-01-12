@@ -25,8 +25,16 @@ public class Player {
 	}
 	public Action getAction()
 	{
-		Action newAct = Action.RAISE;
-		newAct.setAmount(10);
+		Action newAct;
+		if(eval == null)
+			return Action.FOLD;
+		if(eval.getRanking()>2 && money - commited > 10){
+			newAct = Action.RAISE;
+			newAct.setAmount(10);
+		}
+		else{
+			newAct = Action.CALL;
+		}
 		return newAct;
 	}
 	
@@ -70,6 +78,8 @@ public class Player {
 	
 	public int eval()
 	{
+		if(eval == null)
+			initEval();
 		return eval.getRankCode();
 	}
 	
@@ -123,10 +133,10 @@ public class Player {
 	}
 
 	public boolean commit(int raiseAmount) {
-		if(money >= raiseAmount - commited)
+		if(money >= raiseAmount)
 		{
-			money -= raiseAmount - commited;
-			commited = raiseAmount;
+			money -= raiseAmount;
+			commited = 0;
 			ready = true;
 		}
 		return this.ready;
