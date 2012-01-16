@@ -1,6 +1,7 @@
 package poker;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 public class Player {
 	private String name;
@@ -26,15 +27,46 @@ public class Player {
 	public Action getAction(int raiseAmount)
 	{
 		Action newAct;
-		if(eval.getRanking()> 0 && money - commited - raiseAmount >= 10){
-			newAct = Action.RAISE;
-			newAct.setAmount(10);
-		}
-		else if (raiseAmount == commited){
-			newAct = Action.CHECK;
-		}
-		else{
-			newAct = Action.FOLD;
+		int maxCommit = (int)((float)eval.getRanking())/9*(money-commited);
+		Random r = new Random();
+		boolean bluff = r.nextInt(100)/60 == 1;
+		if(bluff)
+		{
+			if(maxCommit > raiseAmount){
+				newAct = Action.RAISE;
+				newAct.setAmount(maxCommit - raiseAmount);
+			}
+			else if (raiseAmount == commited)
+			{
+				newAct = Action.CHECK;
+			}
+			else if(raiseAmount < maxCommit)
+			{
+				newAct = Action.CALL;
+			}
+			else
+			{
+				newAct = Action.FOLD;
+			}
+			
+		} 
+		else
+		{
+			
+			if(eval.getRanking()> 4 && money - commited - raiseAmount >= 1000){
+				newAct = Action.RAISE;
+				newAct.setAmount(1000);
+			}
+			else if(raiseAmount < maxCommit)
+			{
+				newAct = Action.CALL;
+			}
+			else if (raiseAmount == commited){
+				newAct = Action.CHECK;
+			}
+			else{
+				newAct = Action.FOLD;
+			}
 		}
 		return newAct;
 	}
