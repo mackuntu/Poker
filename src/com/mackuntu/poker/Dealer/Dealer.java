@@ -1,4 +1,4 @@
-package poker;
+package com.mackuntu.poker.Dealer;
 
 import java.util.ArrayList;
 import java.util.Random;

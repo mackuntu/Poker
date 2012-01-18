@@ -1,4 +1,4 @@
-package poker;
+package com.mackuntu.poker.Action;
 
 public enum Action {
 	FOLD,

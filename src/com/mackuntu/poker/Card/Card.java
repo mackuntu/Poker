@@ -1,4 +1,4 @@
-package poker;
+package com.mackuntu.poker.Card;
 
 public class Card
 {

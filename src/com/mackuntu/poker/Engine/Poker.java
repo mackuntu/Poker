@@ -1,6 +1,13 @@
-package poker;
+package com.mackuntu.poker.Engine;
 
 import java.util.ArrayList;
+
+import com.mackuntu.poker.Action.Action;
+import com.mackuntu.poker.Card.Card;
+import com.mackuntu.poker.Dealer.Dealer;
+import com.mackuntu.poker.Evaluator.HandEvaluator;
+import com.mackuntu.poker.Player.Player;
+
 
 import processing.core.*;
 

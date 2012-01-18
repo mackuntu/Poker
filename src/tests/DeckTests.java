@@ -3,9 +3,12 @@ package tests;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import junit.framework.*;
+import com.mackuntu.poker.Card.Card;
+import com.mackuntu.poker.Engine.Poker;
+import com.mackuntu.poker.Evaluator.HandEvaluator;
 
-import poker.*;
+
+import junit.framework.*;
 
 public class DeckTests extends TestCase{
 	Poker p;

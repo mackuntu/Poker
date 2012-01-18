@@ -1,7 +1,10 @@
-package poker;
+package com.mackuntu.poker.Evaluator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+
+import com.mackuntu.poker.Card.Card;
+
 public class HandEvaluator {
 	ArrayList<Card> deck = null;
 	private int pairs, bigRank, rankCode, highRankCtr;
