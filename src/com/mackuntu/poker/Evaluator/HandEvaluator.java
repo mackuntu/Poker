@@ -1,9 +1,9 @@
-package com.mackuntu.poker.Evaluator;
+package com.mackuntu.poker.evaluator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 
-import com.mackuntu.poker.Card.Card;
+import com.mackuntu.poker.card.Card;
 
 public class HandEvaluator {
 	ArrayList<Card> deck = null;

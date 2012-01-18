@@ -1,11 +1,11 @@
-package com.mackuntu.poker.Player;
+package com.mackuntu.poker.player;
 
 import java.util.ArrayList;
 import java.util.Random;
 
-import com.mackuntu.poker.Action.Action;
-import com.mackuntu.poker.Card.Card;
-import com.mackuntu.poker.Evaluator.HandEvaluator;
+import com.mackuntu.poker.action.Action;
+import com.mackuntu.poker.card.Card;
+import com.mackuntu.poker.evaluator.HandEvaluator;
 
 
 public class Player {

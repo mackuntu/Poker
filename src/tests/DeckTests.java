@@ -3,9 +3,9 @@ package tests;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.mackuntu.poker.Card.Card;
-import com.mackuntu.poker.Engine.Poker;
-import com.mackuntu.poker.Evaluator.HandEvaluator;
+import com.mackuntu.poker.card.Card;
+import com.mackuntu.poker.engine.Poker;
+import com.mackuntu.poker.evaluator.HandEvaluator;
 
 
 import junit.framework.*;
