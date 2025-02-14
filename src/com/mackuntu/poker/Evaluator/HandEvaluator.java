@@ -1,24 +1,43 @@
-package com.mackuntu.poker.evaluator;
+/**
+ * Evaluates poker hands to determine their ranking and type.
+ * Supports standard poker hand rankings from high card to royal flush.
+ */
+package com.mackuntu.poker.Evaluator;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-
-import com.mackuntu.poker.card.Card;
+import com.mackuntu.poker.Card.Card;
 
 public class HandEvaluator {
+	/** The current hand of cards being evaluated */
 	ArrayList<Card> deck = null;
+	
+	/** Counters for various hand combinations */
 	private int pairs, bigRank, rankCode, highRankCtr;
+	
+	/** Ranks of pairs found in the hand */
 	private int [] pairRanks;
+	
+	/** Ranks for three of a kind, straight, and four of a kind */
 	private int tripRank,straightRank,quadRank;
+    /** Ranks of cards in a flush */
     private int [] flushRank;
+    /** Highest ranked cards in the hand */
     private int [] highRank;
 	private boolean ranked = false, stringed = false;
+	/** String descriptions of poker hand rankings */
 	String [] strings = {"high card","pair", "two pair", "triplets", "straight", "flush", "full house", "four of a kind", "straight flush", "royal flush"};
+	/** Count of each rank in the hand */
 	private int [] rankings;
+	/** Count of each suite in the hand */
 	private int [] suites;
+	/** Count of each rank within each suite */
 	private int [][] suiteRankings;
+	/** Description of the current hand */
 	private String handDesc;
 	
+	/**
+	 * Creates a new hand evaluator with an existing set of cards.
+	 * @param deck The initial set of cards to evaluate
+	 */
 	public HandEvaluator(ArrayList<Card> deck)
 	{
 		this.deck = deck;
@@ -29,11 +48,17 @@ public class HandEvaluator {
 		calcStat();
 	}
 	
+	/**
+	 * Creates a new hand evaluator with no initial cards.
+	 */
 	public HandEvaluator()
 	{
 		this.deck = new ArrayList<Card>(7);
 	}
 	
+	/**
+	 * Initializes or resets all evaluation counters and flags.
+	 */
 	public void evaluatorInit()
 	{
 		pairs = 0;
@@ -49,6 +74,10 @@ public class HandEvaluator {
 		highRank = new int[7];
         highRankCtr = 0;
 	}
+	/**
+	 * Calculates statistics for the current hand.
+	 * Updates rankings, suites, and suite-rankings arrays.
+	 */
 	public void calcStat()
 	{
 		for(Card c: deck)

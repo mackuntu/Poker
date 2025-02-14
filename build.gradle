@@ -1,0 +1,67 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // JUnit 5
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.1'
+    
+    // Processing dependencies
+    implementation files('lib/base/core/core.jar')
+    implementation files('lib/base/net/net.jar')
+    
+    // Minim audio library dependencies
+    implementation files('lib/base/minim/jl1.0.jar')
+    implementation files('lib/base/minim/jsminim.jar')
+    implementation files('lib/base/minim/minim-spi.jar')
+    implementation files('lib/base/minim/minim.jar')
+    implementation files('lib/base/minim/mp3spi1.9.4.jar')
+    implementation files('lib/base/minim/tritonus_aos.jar')
+    implementation files('lib/base/minim/tritonus_share.jar')
+}
+
+application {
+    mainClass = 'processing.core.PApplet'
+}
+
+run {
+    // Configure the run task
+    classpath = sourceSets.main.runtimeClasspath
+    
+    // Pass the main class as an argument to PApplet
+    args = ['com.mackuntu.poker.Engine.Poker']
+    
+    // Enable assertions
+    jvmArgs = ['-ea']
+    
+    // Increase memory if needed
+    minHeapSize = '256m'
+    maxHeapSize = '1g'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src']
+            exclude 'tests/**'
+        }
+    }
+    test {
+        java {
+            srcDirs = ['src/tests']
+        }
+    }
+} 
