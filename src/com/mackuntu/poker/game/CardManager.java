@@ -36,18 +36,12 @@ public class CardManager {
     }
     
     public void dealInitialCards(int dealerPosition) {
-        // Deal cards to each player
-        for (int i = 0; i < players.length * 2; i++) {
+        // Deal two cards to each player with money
+        for (int i = 0; i < players.length; i++) {
             int targetPlayer = (dealerPosition + 1 + i) % players.length;
             if (players[targetPlayer].getMoney() > 0) {
                 players[targetPlayer].addCard(createCard(dealer.getCard()));
-            }
-        }
-        
-        // Initialize hand evaluators
-        for (Player player : players) {
-            if (player.getMoney() > 0) {
-                player.addCard(createCard(dealer.getCard()));
+                players[targetPlayer].addCard(createCard(dealer.getCard()));
             }
         }
     }

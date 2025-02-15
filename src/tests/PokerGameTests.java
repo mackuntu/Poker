@@ -3,7 +3,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import java.util.concurrent.TimeUnit;
-import java.util.ArrayList;
+import java.util.List;
 
 import com.mackuntu.poker.Card.Card;
 import com.mackuntu.poker.Player.Player;
@@ -43,18 +43,12 @@ public class PokerGameTests {
         
         // Set all players to call
         for (int i = 0; i < numPlayers; i++) {
-            int playerPos = (initialPlayer + i) % numPlayers;
             TestStrategy strategy = new TestStrategy();
             Action callAction = Action.CALL;
             callAction.setAmount(game.getBigBlind());
             strategy.setForcedAction(callAction);
-            Player oldPlayer = players[playerPos];
-            Player newPlayer = new Player(oldPlayer.getName(), strategy);
-            newPlayer.setMoney(oldPlayer.getMoney());
-            for (Card card : oldPlayer.getCards()) {
-                newPlayer.addCard(card);
-            }
-            players[playerPos] = newPlayer;
+            players[i] = new Player("Player " + i, strategy);
+            players[i].setMoney(1000);
         }
         
         // Process actions for all players except the last one
@@ -90,13 +84,8 @@ public class PokerGameTests {
             Action callAction = Action.CALL;
             callAction.setAmount(game.getBigBlind());
             strategy.setForcedAction(callAction);
-            Player oldPlayer = players[i];
-            Player newPlayer = new Player(oldPlayer.getName(), strategy);
-            newPlayer.setMoney(oldPlayer.getMoney());
-            for (Card card : oldPlayer.getCards()) {
-                newPlayer.addCard(card);
-            }
-            players[i] = newPlayer;
+            players[i] = new Player("Player " + i, strategy);
+            players[i].setMoney(1000);
         }
         
         // Complete pre-flop round
@@ -114,19 +103,13 @@ public class PokerGameTests {
         assertTrue(game.getCurrentPlayer() >= 0);
         assertTrue(game.getCurrentPlayer() < numPlayers);
         
-        // Set all players to call again for the flop round
+        // Set all players to check for the flop round
         for (int i = 0; i < players.length; i++) {
             if (players[i].isActive()) {
                 TestStrategy strategy = new TestStrategy();
-                Action callAction = Action.CALL;
-                strategy.setForcedAction(callAction);
-                Player oldPlayer = players[i];
-                Player newPlayer = new Player(oldPlayer.getName(), strategy);
-                newPlayer.setMoney(oldPlayer.getMoney());
-                for (Card card : oldPlayer.getCards()) {
-                    newPlayer.addCard(card);
-                }
-                players[i] = newPlayer;
+                strategy.setForcedAction(Action.CHECK);
+                players[i] = new Player("Player " + i, strategy);
+                players[i].setMoney(1000);
             }
         }
         
@@ -150,37 +133,20 @@ public class PokerGameTests {
     public void testPlayerIndicatorWithAllFolds() {
         int numPlayers = players.length;
         int initialPlayer = game.getCurrentPlayer();
-        int lastActivePlayer = -1;
-        
-        // Find all active players first
-        int[] activePlayers = new int[numPlayers];
-        int activeCount = 0;
-        for (int i = 0; i < numPlayers; i++) {
-            int playerIndex = (initialPlayer + i) % numPlayers;
-            if (!players[playerIndex].isFolded()) {
-                activePlayers[activeCount++] = playerIndex;
-            }
-        }
-        
-        // Last active player will be the last one in our list
-        lastActivePlayer = activePlayers[activeCount - 1];
         
         // Make all players fold except the last one
-        for (int i = 0; i < activeCount - 1; i++) {
+        for (int i = 0; i < numPlayers - 1; i++) {
+            int playerIndex = (initialPlayer + i) % numPlayers;
             TestStrategy strategy = new TestStrategy();
             strategy.setForcedAction(Action.FOLD);
-            Player oldPlayer = players[activePlayers[i]];
-            Player newPlayer = new Player(oldPlayer.getName(), strategy);
-            newPlayer.setMoney(oldPlayer.getMoney());
-            for (Card card : oldPlayer.getCards()) {
-                newPlayer.addCard(card);
-            }
-            players[activePlayers[i]] = newPlayer;
+            players[playerIndex] = new Player("Player " + playerIndex, strategy);
+            players[playerIndex].setMoney(1000);
             game.processNextAction();
         }
         
-        // Verify last player is still indicated
-        assertEquals(lastActivePlayer, game.getCurrentPlayer());
+        // Last player should win
+        int lastPlayer = (initialPlayer + numPlayers - 1) % numPlayers;
+        assertEquals(lastPlayer, game.getCurrentPlayer());
         assertEquals(GameState.FINISH, game.getGameState());
     }
 
@@ -296,53 +262,166 @@ public class PokerGameTests {
     @Test
     @Timeout(value = 100, unit = TimeUnit.MILLISECONDS)
     public void testCompleteGame() {
-        // Set all players to call
+        // Set all players to call pre-flop and check post-flop
         for (int i = 0; i < players.length; i++) {
             TestStrategy strategy = new TestStrategy();
             Action callAction = Action.CALL;
+            callAction.setAmount(game.getBigBlind());
             strategy.setForcedAction(callAction);
-            Player oldPlayer = players[i];
-            Player newPlayer = new Player(oldPlayer.getName(), strategy);
-            newPlayer.setMoney(oldPlayer.getMoney());
-            for (Card card : oldPlayer.getCards()) {
-                newPlayer.addCard(card);
-            }
-            players[i] = newPlayer;
+            players[i] = new Player("Player " + i, strategy);
+            players[i].setMoney(1000);
         }
         
+        // Start a new hand
+        game.startNewHand();
+        
+        // Verify initial state
+        assertTrue(game.getPot() > 0, "Pot should contain blinds");
+        assertEquals(GameState.START, game.getGameState());
+        
+        // Run the game until completion
         int maxIterations = 100;  // Prevent infinite loops
         int iterations = 0;
+        GameState currentState = game.getGameState();
         
-        // Complete pre-flop round
-        while (!game.processNextAction() && iterations < maxIterations) {
+        while (game.getGameState() != GameState.FINISH && iterations < maxIterations) {
+            // Process the next action
+            boolean actionProcessed = game.processNextAction();
+            
+            // If the game state changed, update player strategies for the new street
+            if (game.getGameState() != currentState) {
+                // Update strategies to CHECK for post-flop play
+                for (int i = 0; i < players.length; i++) {
+                    if (players[i].isActive()) {
+                        TestStrategy strategy = new TestStrategy();
+                        strategy.setForcedAction(Action.CHECK);
+                        players[i].setLastAction(null);  // Reset last action
+                    }
+                }
+                currentState = game.getGameState();
+            }
+            
+            // Verify basic game invariants
+            if (game.getGameState() != GameState.FINISH) {
+                assertTrue(game.getPot() > 0, "Pot should never be zero during active play");
+            }
+            assertTrue(game.getCurrentPlayer() >= 0 && game.getCurrentPlayer() < players.length, 
+                "Current player should be valid");
+            
             iterations++;
         }
-        assertTrue(iterations < maxIterations, "Game stuck in pre-flop round");
         
-        // Complete flop round
-        iterations = 0;
-        while (!game.processNextAction() && iterations < maxIterations) {
-            iterations++;
-        }
-        assertTrue(iterations < maxIterations, "Game stuck in flop round");
-        
-        // Complete turn round
-        iterations = 0;
-        while (!game.processNextAction() && iterations < maxIterations) {
-            iterations++;
-        }
-        assertTrue(iterations < maxIterations, "Game stuck in turn round");
-        
-        // Complete river round
-        iterations = 0;
-        while (!game.processNextAction() && iterations < maxIterations) {
-            iterations++;
-        }
-        assertTrue(iterations < maxIterations, "Game stuck in river round");
-        
-        // Verify final state
+        // Verify game completed successfully
+        assertTrue(iterations < maxIterations, "Game should complete within iteration limit");
         assertEquals(GameState.FINISH, game.getGameState());
-        assertEquals(5, game.getCardManager().getCommunityCards().size());
+        assertEquals(5, game.getCardManager().getCommunityCards().size(), 
+            "Should have all community cards at end");
+    }
+
+    @Test
+    @Timeout(value = 1, unit = TimeUnit.SECONDS)
+    public void testPotNeverZero() {
+        // Start new hand should collect blinds
+        game.startNewHand();
+        assertTrue(game.getPot() > 0, "Pot should not be zero after blinds are posted");
+        assertEquals(INITIAL_SMALL_BLIND + INITIAL_SMALL_BLIND * 2, game.getPot(), 
+            "Pot should equal small blind + big blind");
+        
+        // Make all players fold except one
+        for (int i = 0; i < players.length - 1; i++) {
+            if (game.getCurrentPlayer() != game.getDealerIndex()) {  // Skip dealer
+                TestStrategy strategy = new TestStrategy();
+                strategy.setForcedAction(Action.FOLD);
+                players[game.getCurrentPlayer()].setLastAction("FOLD");
+                game.processNextAction();
+            }
+        }
+        
+        // Even after all folds, pot should still have blind money
+        assertTrue(game.getPot() > 0, "Pot should not be zero after folds");
+        assertEquals(INITIAL_SMALL_BLIND + INITIAL_SMALL_BLIND * 2, game.getPot(), 
+            "Pot should still contain blind amounts");
+    }
+    
+    @Test
+    @Timeout(value = 1, unit = TimeUnit.SECONDS)
+    public void testPotAfterWinnerDetermined() {
+        // Start new hand
+        game.startNewHand();
+        int initialPot = game.getPot();
+        assertTrue(initialPot > 0, "Initial pot should not be zero");
+        
+        // Record dealer's initial money
+        int dealerIndex = game.getDealerIndex();
+        int dealerInitialMoney = players[dealerIndex].getMoney();
+        
+        // Track total money committed to pot
+        int totalPotSize = initialPot;
+        
+        // Process actions - have players raise and call
+        int maxIterations = players.length * 2; // More than enough iterations
+        int iterations = 0;
+        
+        while (game.getGameState() != GameState.FINISH && iterations < maxIterations) {
+            int currentPlayer = game.getCurrentPlayer();
+            
+            if (currentPlayer == dealerIndex) {
+                // Dealer raises
+                Action raiseAction = Action.RAISE;
+                raiseAction.setAmount(200); // Raise to 200
+                TestStrategy dealerStrategy = new TestStrategy();
+                dealerStrategy.setForcedAction(raiseAction);
+                players[currentPlayer] = new Player(players[currentPlayer].getName(), dealerStrategy);
+                players[currentPlayer].setMoney(players[currentPlayer].getMoney());
+                totalPotSize += 200 - players[currentPlayer].getCommitted();
+            } else {
+                // Others call the dealer's raise
+                Action callAction = Action.CALL;
+                TestStrategy callStrategy = new TestStrategy();
+                callStrategy.setForcedAction(callAction);
+                players[currentPlayer] = new Player(players[currentPlayer].getName(), callStrategy);
+                players[currentPlayer].setMoney(players[currentPlayer].getMoney());
+                totalPotSize += 200 - players[currentPlayer].getCommitted();
+            }
+            
+            game.processNextAction();
+            iterations++;
+        }
+        
+        // Verify we didn't hit the iteration limit
+        assertTrue(iterations < maxIterations, "Game should complete before iteration limit");
+        
+        // Verify pot size matches total committed money
+        assertEquals(totalPotSize, game.getPot(), "Pot should match total committed money");
+        
+        // Process final action to trigger winner determination
+        game.processNextAction();
+        
+        // Verify dealer won the pot
+        assertEquals(dealerInitialMoney + totalPotSize, players[dealerIndex].getMoney(), 
+            "Dealer should receive the correct pot amount");
+        assertEquals(0, game.getPot(), "Pot should be zero after being awarded");
+    }
+    
+    @Test
+    @Timeout(value = 1, unit = TimeUnit.SECONDS)
+    public void testPotWithAllInPlayers() {
+        // Set one player to only have enough for small blind
+        int smallBlindPos = (game.getDealerIndex() + 1) % players.length;
+        players[smallBlindPos].setMoney(INITIAL_SMALL_BLIND);
+        
+        // Start new hand
+        game.startNewHand();
+        
+        // Verify pot contains the all-in amount plus big blind
+        assertEquals(INITIAL_SMALL_BLIND + INITIAL_SMALL_BLIND * 2, game.getPot(), 
+            "Pot should contain small blind all-in plus big blind");
+        assertEquals(0, players[smallBlindPos].getMoney(), 
+            "Small blind player should be all-in");
+        
+        // Verify player is removed from active players after going all-in
+        assertFalse(game.isPlayerActive(smallBlindPos), 
+            "Player should not be active after going all-in");
     }
 
     @Test

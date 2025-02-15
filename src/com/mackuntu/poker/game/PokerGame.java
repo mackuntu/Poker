@@ -5,16 +5,18 @@ import java.util.List;
 import com.mackuntu.poker.Action.Action;
 import com.mackuntu.poker.Card.Card;
 import com.mackuntu.poker.Player.Player;
-import com.mackuntu.poker.game.GameState;
 import com.mackuntu.poker.Evaluator.HandEvaluator;
 
 public class PokerGame {
     private final Player[] players;
-    private final GameStateManager stateManager;
+    private final PlayerStateManager playerManager;
+    private final DealerPositionManager dealerManager;
+    private final GameMessageManager messageManager;
     private final BettingManager bettingManager;
     private final CardManager cardManager;
     private final ArrayList<String> handAnalysis;
     private final boolean testMode;
+    private GameState state;
     private int currentPlayer;
     private int smallBlind;
     private int bigBlind;
@@ -24,10 +26,13 @@ public class PokerGame {
     public PokerGame(Player[] players, boolean testMode) {
         this.players = players;
         this.testMode = testMode;
-        this.stateManager = new GameStateManager(players);
+        this.playerManager = new PokerPlayerStateManager(players);
+        this.dealerManager = new StandardDealerManager(players.length);
+        this.messageManager = new StandardGameMessageManager();
+        this.state = GameState.START;
         this.smallBlind = 20;
         this.bigBlind = 40;
-        this.bettingManager = new BettingManager(players, stateManager);
+        this.bettingManager = new BettingManager(players);
         this.cardManager = new CardManager(players, testMode);
         this.handAnalysis = new ArrayList<>();
         this.handsPlayed = 0;
@@ -38,7 +43,18 @@ public class PokerGame {
         }
     }
     
+    public boolean hasEnoughActivePlayers() {
+        return playerManager.getActivePlayerCount() >= 2;
+    }
+
     public void startNewHand() {
+        // First check if we have enough players with money
+        if (!hasEnoughActivePlayers()) {
+            state = GameState.FINISH;
+            addHandAnalysis("Game over - not enough players with money to continue");
+            return;
+        }
+
         handsPlayed++;
         if (handsPlayed % 10 == 0) {
             smallBlind *= 2;
@@ -47,48 +63,75 @@ public class PokerGame {
         }
         
         // Reset game state
-        stateManager.initializeNewHand();
+        state = GameState.START;
+        playerManager.reinitializePlayers();
         bettingManager.initializeNewHand();
         cardManager.initializeNewHand();
         handAnalysis.clear();
         
-        // Post blinds
-        int smallBlindPos = (stateManager.getDealerIndex() + 1) % players.length;
-        int bigBlindPos = (stateManager.getDealerIndex() + 2) % players.length;
+        // Find next valid small blind position (player must have money)
+        int smallBlindPos = (dealerManager.getDealerPosition() + 1) % players.length;
+        while (!playerManager.isPlayerActive(smallBlindPos)) {
+            smallBlindPos = (smallBlindPos + 1) % players.length;
+        }
         
-        bettingManager.postBlind(smallBlindPos, smallBlind);
-        bettingManager.postBlind(bigBlindPos, bigBlind);
+        // Find next valid big blind position (player must have money)
+        int bigBlindPos = (smallBlindPos + 1) % players.length;
+        while (!playerManager.isPlayerActive(bigBlindPos)) {
+            bigBlindPos = (bigBlindPos + 1) % players.length;
+        }
+        
+        // Post blinds if players can afford them
+        Player smallBlindPlayer = players[smallBlindPos];
+        Player bigBlindPlayer = players[bigBlindPos];
+        
+        bettingManager.postBlind(smallBlindPos, Math.min(smallBlind, smallBlindPlayer.getMoney()));
+        bettingManager.postBlind(bigBlindPos, Math.min(bigBlind, bigBlindPlayer.getMoney()));
+        
+        if (smallBlindPlayer.getMoney() <= 0) {
+            handlePlayerAllIn(smallBlindPos);
+        }
+        if (bigBlindPlayer.getMoney() <= 0) {
+            handlePlayerAllIn(bigBlindPos);
+        }
         
         // Deal cards
-        cardManager.dealInitialCards(stateManager.getDealerIndex());
+        cardManager.dealInitialCards(dealerManager.getDealerPosition());
         
-        // Set initial player
-        currentPlayer = (stateManager.getDealerIndex() + 3) % players.length;
-        while (!stateManager.isPlayerActive(currentPlayer)) {
+        // Set initial player to first player after big blind with money
+        currentPlayer = (bigBlindPos + 1) % players.length;
+        while (!playerManager.isPlayerActive(currentPlayer)) {
             currentPlayer = (currentPlayer + 1) % players.length;
+        }
+    }
+    
+    private void handlePlayerAllIn(int playerIndex) {
+        if (players[playerIndex].getMoney() <= 0) {
+            playerManager.handlePlayerAllIn(playerIndex);
+            messageManager.addMessage(players[playerIndex].getName() + " has been eliminated (out of money)");
         }
     }
     
     private void moveToNextStreet() {
         // Reset betting for the next street
-        bettingManager.initializeNewHand();
+        bettingManager.initializeNewStreet();
         roundStartPlayer = -1;  // Reset for next street
         
-        switch (stateManager.getGameState()) {
+        switch (state) {
             case START:
                 cardManager.dealNextStreet(GameState.FLOP);
-                stateManager.setGameState(GameState.FLOP);
+                state = GameState.FLOP;
                 break;
             case FLOP:
                 cardManager.dealNextStreet(GameState.TURN);
-                stateManager.setGameState(GameState.TURN);
+                state = GameState.TURN;
                 break;
             case TURN:
                 cardManager.dealNextStreet(GameState.RIVER);
-                stateManager.setGameState(GameState.RIVER);
+                state = GameState.RIVER;
                 break;
             case RIVER:
-                stateManager.setGameState(GameState.FINISH);
+                state = GameState.FINISH;
                 determineWinner();
                 break;
             default:
@@ -104,7 +147,7 @@ public class PokerGame {
         }
         
         // Get all active players and their bets
-        List<Integer> activePlayers = stateManager.getActivePlayers();
+        List<Integer> activePlayers = getActivePlayers();
         if (activePlayers.isEmpty()) {
             return false;
         }
@@ -125,39 +168,48 @@ public class PokerGame {
     private void moveToNextPlayer() {
         do {
             currentPlayer = (currentPlayer + 1) % players.length;
-        } while (!stateManager.isPlayerActive(currentPlayer));
+        } while (!isPlayerActive(currentPlayer));
     }
 
     private void resetToFirstPlayer() {
         // In pre-flop, first player is after big blind (dealer + 3)
         // In all other streets, first player is small blind (dealer + 1)
-        int offset = stateManager.getGameState() == GameState.START ? 3 : 1;
-        currentPlayer = (stateManager.getDealerIndex() + offset) % players.length;
-        while (!stateManager.isPlayerActive(currentPlayer)) {
+        int offset = state == GameState.START ? 3 : 1;
+        currentPlayer = (dealerManager.getDealerPosition() + offset) % players.length;
+        while (!isPlayerActive(currentPlayer)) {
             currentPlayer = (currentPlayer + 1) % players.length;
         }
         roundStartPlayer = -1;  // Reset for new betting round
     }
 
     public boolean processNextAction() {
-        if (stateManager.getGameState() == GameState.FINISH) {
-            return false;
+        if (state == GameState.FINISH) {
+            System.out.println("In FINISH state - advancing dealer and starting new hand");
+            dealerManager.advanceDealer(playerManager);
+            startNewHand();
+            return true;
         }
         
         // Initialize roundStartPlayer if not set
         if (roundStartPlayer == -1) {
             roundStartPlayer = currentPlayer;
+            System.out.println("Setting round start player to: " + currentPlayer);
         }
         
         // Get and process player's action
+        System.out.println("Getting action for player " + currentPlayer + " (" + players[currentPlayer].getName() + ")");
         Action playerAction = players[currentPlayer].getAction(
             bettingManager.getCurrentBet(),
             cardManager.getCommunityCards(),
             bettingManager.getPot()
         );
+        System.out.println("Player action: " + playerAction);
+        
         boolean actionTaken = bettingManager.processAction(playerAction, currentPlayer);
+        System.out.println("Action taken: " + actionTaken);
         
         if (!actionTaken) {
+            System.out.println("Action was not valid/processed");
             return false;
         }
 
@@ -165,25 +217,35 @@ public class PokerGame {
         addHandAnalysis(getActionDescription(players[currentPlayer], playerAction));
         
         // Check if only one player remains
-        if (stateManager.getActivePlayerCount() == 1) {
-            List<Integer> activePlayers = stateManager.getActivePlayers();
+        if (getActivePlayerCount() == 1) {
+            System.out.println("Only one player remains active!");
+            List<Integer> activePlayers = getActivePlayers();
             currentPlayer = activePlayers.get(0);
-            stateManager.setGameState(GameState.FINISH);
-            determineWinner();
+            System.out.println("Last player standing: " + players[currentPlayer].getName());
+            determineWinner();  // Award pot to the last remaining player
+            state = GameState.FINISH;  // Set state to FINISH after awarding pot
+            dealerManager.advanceDealer(playerManager);  // Advance dealer for next hand
             return true;
         }
         
         // Move to next player
+        int oldPlayer = currentPlayer;
         moveToNextPlayer();
+        System.out.println("Moved from player " + oldPlayer + " to " + currentPlayer);
         
         // Check if round is complete
         if (isRoundComplete()) {
+            System.out.println("Round is complete - moving to next street");
             moveToNextStreet();
             
             // Reset player order for next street if game isn't finished
-            if (stateManager.getGameState() != GameState.FINISH) {
+            if (state != GameState.FINISH) {
                 resetToFirstPlayer();
                 roundStartPlayer = currentPlayer;  // Set the new round start player
+                System.out.println("Reset to first player: " + currentPlayer);
+            } else {
+                System.out.println("Game finished - dealer will advance");
+                dealerManager.advanceDealer(playerManager);
             }
             return true;
         }
@@ -228,7 +290,7 @@ public class PokerGame {
         // Find active players
         List<Integer> activeIndices = new ArrayList<>();
         for (int i = 0; i < players.length; i++) {
-            if (stateManager.isPlayerActive(i)) {
+            if (isPlayerActive(i)) {
                 activeIndices.add(i);
             }
         }
@@ -236,8 +298,11 @@ public class PokerGame {
         if (activeIndices.size() == 1) {
             // Only one player left - they win
             int winner = activeIndices.get(0);
+            int potAmount = bettingManager.getPot();
             bettingManager.awardPot(winner);
-            addHandAnalysis(players[winner].getName() + " wins $" + bettingManager.getPot());
+            String message = players[winner].getName() + " wins $" + potAmount;
+            addHandAnalysis(message);
+            messageManager.addMessage(message);
         } else {
             // Compare hands
             int bestRank = -1;
@@ -258,14 +323,17 @@ public class PokerGame {
                 }
             }
             
+            int potAmount = bettingManager.getPot();
             if (winners.size() == 1) {
                 int winner = winners.get(0);
                 bettingManager.awardPot(winner);
                 ArrayList<Card> winningCards = new ArrayList<>(players[winner].getCards());
                 winningCards.addAll(cardManager.getCommunityCards());
                 HandEvaluator winnerHand = new HandEvaluator(winningCards);
-                addHandAnalysis(players[winner].getName() + " wins $" + bettingManager.getPot() + 
-                              " with " + winnerHand.getString());
+                String message = players[winner].getName() + " wins $" + potAmount + 
+                               " with " + winnerHand.getString();
+                addHandAnalysis(message);
+                messageManager.addMessage(message);
             } else {
                 int[] winnerArray = new int[winners.size()];
                 for (int i = 0; i < winners.size(); i++) {
@@ -273,7 +341,7 @@ public class PokerGame {
                 }
                 bettingManager.splitPot(winnerArray);
                 
-                StringBuilder sb = new StringBuilder("Split pot between: ");
+                StringBuilder sb = new StringBuilder("Split pot ($" + potAmount + ") between: ");
                 for (int i = 0; i < winners.size(); i++) {
                     if (i > 0) sb.append(", ");
                     sb.append(players[winners.get(i)].getName());
@@ -282,7 +350,9 @@ public class PokerGame {
                 winningCards.addAll(cardManager.getCommunityCards());
                 HandEvaluator winnerHand = new HandEvaluator(winningCards);
                 sb.append(" with ").append(winnerHand.getString());
-                addHandAnalysis(sb.toString());
+                String message = sb.toString();
+                addHandAnalysis(message);
+                messageManager.addMessage(message);
             }
         }
     }
@@ -296,9 +366,12 @@ public class PokerGame {
     public int getSmallBlind() { return smallBlind; }
     public int getBigBlind() { return bigBlind; }
     public int getCurrentPlayer() { return currentPlayer; }
-    public GameState getGameState() { return stateManager.getGameState(); }
+    public GameState getGameState() { return state; }
     public int getPot() { return bettingManager.getPot(); }
-    public int getDealerIndex() { return stateManager.getDealerIndex(); }
+    public int getDealerIndex() { return dealerManager.getDealerPosition(); }
     public CardManager getCardManager() { return cardManager; }
     public boolean isTestMode() { return testMode; }
+    public List<Integer> getActivePlayers() { return playerManager.getActivePlayers(); }
+    public boolean isPlayerActive(int playerIndex) { return playerManager.isPlayerActive(playerIndex); }
+    public int getActivePlayerCount() { return playerManager.getActivePlayerCount(); }
 } 

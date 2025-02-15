@@ -16,7 +16,7 @@ public enum Action {
 	CHECK;
 
 	/** The amount associated with a raise action */
-	protected int amount;
+	private int amount;
 
 	/**
 	 * Sets the amount for a raise action.

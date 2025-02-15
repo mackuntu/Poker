@@ -11,11 +11,12 @@ import java.util.ArrayList;
 public class PokerUI {
     private static final int CARD_WIDTH = 84;
     private static final int CARD_HEIGHT = 118;
-    private static final float CARD_SCALE = 1.0f;  // Increased from 0.8f
+    private static final float CARD_SCALE = 0.8f;  // Reduced scale for more players
     private static final int TABLE_COLOR = 0xFF228B22; // Forest green with full alpha
-    private static final int ANALYSIS_HEIGHT = 120;  // Increased from 80
+    private static final int ANALYSIS_HEIGHT = 120;
     private static final int MAX_VISIBLE_LINES = 5;
     private static final int LINE_HEIGHT = 20;
+    private static final int MAX_PLAYERS = 12;
 
     private final PApplet applet;
     private final PImage[] deckImages;
@@ -27,22 +28,30 @@ public class PokerUI {
         this.applet = applet;
         this.deckImages = deckImages;
         this.cardBack = cardBack;
-        this.playerX = new int[6];  // 6-max poker
-        this.playerY = new int[6];
+        this.playerX = new int[MAX_PLAYERS];
+        this.playerY = new int[MAX_PLAYERS];
         
         // Set default text properties
         applet.textFont(font);
         applet.textAlign(PApplet.CENTER, PApplet.CENTER);
         
-        // Calculate player positions
-        for (int i = 0; i < 6; i++) {
-            double angle = (i * 2 * Math.PI / 6) - Math.PI/2;
-            int centerX = applet.width / 2;
-            int centerY = applet.height / 2;
-            int tableRadiusX = applet.width / 2 - 150;
-            int tableRadiusY = applet.height / 2 - 100;
-            playerX[i] = (int)(centerX + tableRadiusX * Math.cos(angle) - 84);
-            playerY[i] = (int)(centerY + tableRadiusY * Math.sin(angle) - 59);
+        // Calculate player positions in an elliptical arrangement
+        calculatePlayerPositions();
+    }
+
+    private void calculatePlayerPositions() {
+        int centerX = applet.width / 2;
+        int centerY = applet.height / 2;
+        float tableRadiusX = applet.width * 0.4f;  // Adjusted for more players
+        float tableRadiusY = applet.height * 0.35f; // Adjusted for more players
+        
+        for (int i = 0; i < MAX_PLAYERS; i++) {
+            // Calculate angle for each player, offset by -90 degrees to start from top
+            double angle = (i * 2 * Math.PI / MAX_PLAYERS) - Math.PI/2;
+            
+            // Calculate position with elliptical adjustment
+            playerX[i] = (int)(centerX + tableRadiusX * Math.cos(angle) - (CARD_WIDTH * CARD_SCALE) / 2);
+            playerY[i] = (int)(centerY + tableRadiusY * Math.sin(angle) - (CARD_HEIGHT * CARD_SCALE) / 2);
         }
     }
 
@@ -53,7 +62,7 @@ public class PokerUI {
         
         // Draw table outline
         applet.fill(TABLE_COLOR);
-        applet.ellipse(width/2, height/2, width/1.2f, height/1.2f);  // Increased table size
+        applet.ellipse(width/2, height/2, width * 0.85f, height * 0.75f);  // Adjusted table size
     }
 
     public void drawCommunityCards(ArrayList<Card> deck, int width, int height) {
@@ -73,16 +82,15 @@ public class PokerUI {
 
     public void drawPotInfo(int pot, int smallBlind, int bigBlind, int roundCount, int width, int height) {
         applet.fill(255);
-        applet.textSize(24);  // Increased text size
-        applet.text("Pot: $" + pot, width/2, height/2 + CARD_HEIGHT/2 + 20);
-        applet.textSize(18);  // Increased text size
+        applet.textSize(20);  // Slightly smaller text for more players
+        applet.text("Pot: $" + pot, width/2, height/2 + CARD_HEIGHT * CARD_SCALE/2 + 20);
+        applet.textSize(16);
         applet.text("Blinds: $" + smallBlind + "/$" + bigBlind + " (Round " + roundCount + ")", 
-            width/2, height/2 + CARD_HEIGHT/2 + 50);
+            width/2, height/2 + CARD_HEIGHT * CARD_SCALE/2 + 45);
     }
 
     public void drawPlayer(Player player, int currentPlayerIndex, int playerIndex, float cardScale) {
-        ArrayList<Card> playerHand = player.getCards();
-        cardScale = CARD_SCALE;  // Use the constant scale
+        if (playerIndex >= MAX_PLAYERS) return;
         
         // Get stored coordinates for this player position
         int x = playerX[playerIndex];
@@ -93,44 +101,45 @@ public class PokerUI {
             applet.stroke(255, 255, 0);  // Yellow highlight
             applet.strokeWeight(3);
             applet.noFill();
-            applet.rect(x - 5, y - 25, 
-                CARD_WIDTH * 2 * cardScale + 10, CARD_HEIGHT * cardScale + 90);
+            applet.rect(x - 5, y - 20, 
+                CARD_WIDTH * 2 * CARD_SCALE + 10, CARD_HEIGHT * CARD_SCALE + 70);
             applet.strokeWeight(1);
             applet.noStroke();
         }
         
         // Draw cards
+        ArrayList<Card> playerHand = player.getCards();
         if(playerHand == null || playerHand.isEmpty()) {
             applet.image(cardBack, x, y, 
-                CARD_WIDTH * cardScale, CARD_HEIGHT * cardScale);
-            applet.image(cardBack, x + CARD_WIDTH * cardScale, y, 
-                CARD_WIDTH * cardScale, CARD_HEIGHT * cardScale);
+                CARD_WIDTH * CARD_SCALE, CARD_HEIGHT * CARD_SCALE);
+            applet.image(cardBack, x + CARD_WIDTH * CARD_SCALE, y, 
+                CARD_WIDTH * CARD_SCALE, CARD_HEIGHT * CARD_SCALE);
         } else if (playerHand.size() >= 2) {
             applet.image(deckImages[playerHand.get(0).hashCode()], x, y, 
-                CARD_WIDTH * cardScale, CARD_HEIGHT * cardScale);
+                CARD_WIDTH * CARD_SCALE, CARD_HEIGHT * CARD_SCALE);
             applet.image(deckImages[playerHand.get(1).hashCode()], 
-                x + CARD_WIDTH * cardScale, y, 
-                CARD_WIDTH * cardScale, CARD_HEIGHT * cardScale);
+                x + CARD_WIDTH * CARD_SCALE, y, 
+                CARD_WIDTH * CARD_SCALE, CARD_HEIGHT * CARD_SCALE);
         }
         
-        // Draw player info
-        drawPlayerInfo(player, x, y, cardScale);
+        // Draw player info with adjusted text sizes
+        drawPlayerInfo(player, x, y);
     }
 
-    private void drawPlayerInfo(Player player, int x, int y, float cardScale) {
+    private void drawPlayerInfo(Player player, int x, int y) {
         applet.fill(255);
-        applet.textSize(18);  // Increased text size
+        applet.textSize(14);  // Smaller text size for more players
         
         // Draw name
         applet.text(player.getName(), 
-            x + CARD_WIDTH * cardScale, y - 25);
+            x + CARD_WIDTH * CARD_SCALE, y - 20);
         
         if (!player.isFolded()) {
             // Draw action
             if (player.getLastAction() != null) {
                 applet.text(player.getLastAction(), 
-                    x + CARD_WIDTH * cardScale, 
-                    y + CARD_HEIGHT * cardScale + 25);
+                    x + CARD_WIDTH * CARD_SCALE, 
+                    y + CARD_HEIGHT * CARD_SCALE + 20);
             }
             
             // Draw stack and bet
@@ -139,12 +148,12 @@ public class PokerUI {
                 moneyInfo += " (Bet: $" + player.getCommitted() + ")";
             }
             applet.text(moneyInfo, 
-                x + CARD_WIDTH * cardScale, 
-                y + CARD_HEIGHT * cardScale + 50);
+                x + CARD_WIDTH * CARD_SCALE, 
+                y + CARD_HEIGHT * CARD_SCALE + 40);
         } else {
             applet.text("FOLD", 
-                x + CARD_WIDTH * cardScale, 
-                y + CARD_HEIGHT * cardScale + 25);
+                x + CARD_WIDTH * CARD_SCALE, 
+                y + CARD_HEIGHT * CARD_SCALE + 20);
         }
     }
 
@@ -158,7 +167,7 @@ public class PokerUI {
         // Draw analysis text
         applet.fill(255);
         applet.textAlign(PApplet.LEFT, PApplet.TOP);
-        applet.textSize(18);
+        applet.textSize(16);  // Slightly smaller text
         
         ArrayList<String> allLines = new ArrayList<>();
         

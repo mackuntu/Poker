@@ -1,37 +1,37 @@
 package com.mackuntu.poker.game;
 
-import com.mackuntu.poker.Player.Player;
 import com.mackuntu.poker.Action.Action;
+import com.mackuntu.poker.Player.Player;
 
 public class BettingManager {
-    private final Player[] players;
-    private final GameStateManager gameStateManager;
-    private int currentBet;  // Current bet to call
-    private int pot;        // Total pot size
-    private int minRaise;   // Minimum raise amount
+    private final PlayerStateManager playerManager;
+    private final BettingRules bettingRules;
+    private final PotManager potManager;
+    private final ActionValidator actionValidator;
     
-    public BettingManager(Player[] players, GameStateManager gameStateManager) {
-        this.players = players;
-        this.gameStateManager = gameStateManager;
-        this.currentBet = 0;
-        this.pot = 0;
-        this.minRaise = 0;
+    public BettingManager(Player[] players) {
+        this.playerManager = new PokerPlayerStateManager(players);
+        this.bettingRules = new StandardBettingRules();
+        this.potManager = new PokerPotManager(playerManager);
+        this.actionValidator = new StandardActionValidator(bettingRules);
     }
     
     public void initializeNewHand() {
-        currentBet = 0;
-        pot = 0;
-        minRaise = 0;
-        for (Player player : players) {
-            if (player.isActive()) {
-                player.clearCommitted();
-            }
+        bettingRules.resetBets();
+        potManager.resetPot();
+        playerManager.reinitializePlayers();
+    }
+    
+    public void initializeNewStreet() {
+        bettingRules.resetBets();
+        for (Integer playerIndex : playerManager.getActivePlayers()) {
+            playerManager.getPlayer(playerIndex).clearCommitted();
         }
     }
     
     public boolean processAction(Action action, int playerIndex) {
-        Player player = players[playerIndex];
-        if (!player.canAct()) {
+        Player player = playerManager.getPlayer(playerIndex);
+        if (!actionValidator.isValidAction(action, player, bettingRules.getCurrentBet())) {
             return false;
         }
         
@@ -40,92 +40,83 @@ public class BettingManager {
         
         switch (action) {
             case FOLD:
-                player.fold();
-                gameStateManager.handlePlayerAction(playerIndex, "FOLD");
+                playerManager.handlePlayerFold(playerIndex);
                 success = true;
                 break;
                 
             case CHECK:
-                // Can only check if no bet to call
-                if (playerCommitted == currentBet) {
+                if (bettingRules.canCheck(player)) {
                     success = true;
                 }
                 break;
                 
             case CALL:
-                // Must match the current bet exactly
-                int toCall = currentBet - playerCommitted;
-                if (toCall >= 0 && player.bet(toCall)) {
-                    pot += toCall;
-                    success = true;
-                }
+                success = handleCall(player);
                 break;
                 
             case RAISE:
-                // Must be at least minimum raise
-                int raiseAmount = action.getAmount();
-                if (raiseAmount <= currentBet) {
-                    return false;
-                }
-                
-                // Calculate total amount needed
-                int totalNeeded = raiseAmount - playerCommitted;
-                if (totalNeeded > 0 && player.bet(totalNeeded)) {
-                    pot += totalNeeded;
-                    currentBet = raiseAmount;
-                    minRaise = raiseAmount - currentBet; // Set new minimum raise
-                    success = true;
-                }
-                break;
-                
-            default:
+                success = handleRaise(player, action.getAmount());
                 break;
         }
         
         if (success) {
-            if (player.hasNoMoney()) {
-                gameStateManager.handleMoneyChange(playerIndex);
-            }
             player.setLastAction(action.toString());
+            if (player.getMoney() <= 0) {
+                playerManager.handlePlayerAllIn(playerIndex);
+            }
         }
         
         return success;
     }
     
+    private boolean handleCall(Player player) {
+        int toCall = bettingRules.getCurrentBet() - player.getCommitted();
+        if (toCall >= 0 && player.bet(toCall)) {
+            potManager.addToPot(toCall);
+            return true;
+        }
+        return false;
+    }
+    
+    private boolean handleRaise(Player player, int raiseAmount) {
+        if (!bettingRules.canRaise(player, raiseAmount)) {
+            return false;
+        }
+        
+        int totalNeeded = raiseAmount - player.getCommitted();
+        if (player.bet(totalNeeded)) {
+            potManager.addToPot(totalNeeded);
+            bettingRules.setCurrentBet(raiseAmount);
+            return true;
+        }
+        return false;
+    }
+    
     public void postBlind(int playerIndex, int amount) {
-        Player player = players[playerIndex];
+        Player player = playerManager.getPlayer(playerIndex);
         if (player.bet(amount)) {
-            pot += amount;
-            currentBet = amount;
-            minRaise = amount; // Minimum raise is the size of the big blind
-            if (player.hasNoMoney()) {
-                gameStateManager.handleMoneyChange(playerIndex);
-            }
+            potManager.addToPot(amount);
+            bettingRules.setCurrentBet(amount);
         }
     }
     
     public int getCurrentBet() {
-        return currentBet;
+        return bettingRules.getCurrentBet();
     }
     
     public int getMinRaise() {
-        return minRaise;
+        return bettingRules.getMinimumRaise();
     }
     
     public int getPot() {
-        return pot;
+        return potManager.getPotSize();
     }
     
     public void awardPot(int playerIndex) {
-        players[playerIndex].adjustMoney(pot);
-        pot = 0;
+        potManager.awardPot(playerIndex);
     }
     
     public void splitPot(int[] playerIndices) {
-        int share = pot / playerIndices.length;
-        for (int index : playerIndices) {
-            players[index].adjustMoney(share);
-        }
-        pot = 0;
+        potManager.splitPot(playerIndices);
     }
 } 
