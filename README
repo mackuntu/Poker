@@ -1,22 +1,129 @@
-# Poker - Texas Hold'em Implementation
+# Java Poker Game
 
-## Purpose
-This repository contains a Java implementation of Texas Hold'em poker. The project simulates a poker game with multiple players, a dealer, and hand evaluations. It includes various classes to manage the game logic, player actions, card handling, and hand ranking.
+A fully-featured Texas Hold'em Poker game implementation in Java using Processing for the graphical interface.
 
-## Current Status
-The project is currently functional with the following features:
-- Card and deck management
-- Player actions (fold, raise, call, check)
-- Hand evaluation and ranking
-- Basic game flow (deal, flop, turn, river, and showdown)
-- Unit tests for deck and hand evaluation
+## Features
 
-## Remaining Work
-- Improve the user interface for better interaction and visualization
-- Add more comprehensive unit tests for all game scenarios
-- Implement betting rounds and pot management
-- Enhance the AI for player actions and decision-making
-- Optimize the code for better performance and readability
-- Add documentation and comments for better code understanding
+- Complete Texas Hold'em poker game engine
+- Visual card representation and table layout
+- Support for up to 12 players
+- Multiple AI player strategies:
+  - Basic strategy (balanced play)
+  - Aggressive strategy (more raises and bluffs)
+  - Random strategy (for testing)
+- Automatic blind progression
+- Pot management with split pot support
+- Hand evaluation from high card to royal flush
+- Game state visualization and hand analysis
+- Restart capability when game ends
 
-Feel free to collaborate and contribute to the project!
+## Project Structure
+
+```
+src/
+├── com/mackuntu/poker/
+│   ├── Action/         # Player action definitions
+│   ├── Card/           # Card representation
+│   ├── Dealer/         # Deck and dealing logic
+│   ├── Engine/         # Main game engine
+│   ├── Evaluator/      # Hand evaluation logic
+│   ├── Player/         # Player management and AI strategies
+│   ├── game/           # Core game mechanics
+│   └── ui/             # User interface components
+└── tests/              # Test suites
+```
+
+### Key Components
+
+- **Game Engine** (`Engine/Poker.java`): Main game loop and UI integration
+- **Game Logic** (`game/`):
+  - `PokerGame`: Core game rules and state management
+  - `BettingManager`: Handles betting rounds and pot management
+  - `CardManager`: Manages deck and community cards
+  - Various managers for player state, dealer position, etc.
+- **Player Strategies** (`Player/`):
+  - `BasicPokerStrategy`: Standard poker playing logic
+  - `AggressiveStrategy`: More aggressive betting patterns
+  - `RandomPlayerStrategy`: Random decision making
+  - `TestStrategy`: Configurable actions for testing
+
+## Dependencies
+
+- Java 21 or higher
+- Processing Core Library
+- JUnit 5 (for tests)
+
+## Building and Running
+
+1. Install dependencies:
+```bash
+./download_deps.sh
+```
+
+2. Build the project:
+```bash
+./gradlew build
+```
+
+3. Run the game:
+```bash
+./gradlew run
+```
+
+## Game Controls
+
+- Press any key to advance the game
+- Press 'R' to restart when game is over
+
+## Game Rules
+
+- Standard Texas Hold'em rules
+- Initial stack: $1000 per player
+- Starting blinds: $20/$40
+- Blinds increase every 10 hands
+- Game ends when one player has all the money
+
+## Testing
+
+Run the test suite:
+```bash
+./gradlew test
+```
+
+The project includes comprehensive tests for:
+- Core game mechanics
+- Hand evaluation
+- Betting logic
+- Player actions
+- UI components
+
+## Architecture
+
+The game follows a modular architecture with clear separation of concerns:
+
+1. **Core Game Logic**
+   - State management through specialized managers
+   - Clear interfaces for game components
+   - Encapsulated betting and pot management
+
+2. **Player Management**
+   - Flexible player strategy system
+   - State tracking for active/folded/all-in players
+   - Support for AI and human players
+
+3. **UI Layer**
+   - Processing-based visualization
+   - Real-time game state display
+   - Hand analysis and action history
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
