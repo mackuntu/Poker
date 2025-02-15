@@ -1,3 +1,22 @@
-This is a java implementation of TexasHoldem
+# Poker - Texas Hold'em Implementation
 
-Feel free to collab.
+## Purpose
+This repository contains a Java implementation of Texas Hold'em poker. The project simulates a poker game with multiple players, a dealer, and hand evaluations. It includes various classes to manage the game logic, player actions, card handling, and hand ranking.
+
+## Current Status
+The project is currently functional with the following features:
+- Card and deck management
+- Player actions (fold, raise, call, check)
+- Hand evaluation and ranking
+- Basic game flow (deal, flop, turn, river, and showdown)
+- Unit tests for deck and hand evaluation
+
+## Remaining Work
+- Improve the user interface for better interaction and visualization
+- Add more comprehensive unit tests for all game scenarios
+- Implement betting rounds and pot management
+- Enhance the AI for player actions and decision-making
+- Optimize the code for better performance and readability
+- Add documentation and comments for better code understanding
+
+Feel free to collaborate and contribute to the project!

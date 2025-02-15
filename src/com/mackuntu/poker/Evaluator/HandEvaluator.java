@@ -280,6 +280,18 @@ public class HandEvaluator {
 				highRank[highRankCtr++] = i;
 			}
 		}
+		
+		// If no four of a kind found, still collect high cards for other hand types
+		if (quadRank == -1) {
+			highRankCtr = 0;  // Reset counter
+			for(int i = 13; i>0; i--) {
+				int tmp = i%rankings.length;
+				if(rankings[tmp]>0 && highRankCtr<7) {
+					highRank[highRankCtr++] = i;
+				}
+			}
+		}
+		
 		return quadRank != -1;
 	}
 	
@@ -310,37 +322,56 @@ public class HandEvaluator {
 			stringed = true;
 		}
 		if(!stringed){
+			if (!ranked) {
+				getRanking();  // Ensure hand is evaluated
+			}
 			handDesc = strings[bigRank];
 			switch(bigRank)
 			{
-			case 0:
-				handDesc += " of " + Card.RANK_NAME[highRank[0]];
+			case 0:  // High card
+				if (highRankCtr > 0) {
+					handDesc = Card.RANK_NAME[highRank[0]] + " high";
+					// Add next highest cards
+					for (int i = 1; i < Math.min(highRankCtr, 5); i++) {
+						handDesc += ", " + Card.RANK_NAME[highRank[i]];
+					}
+				}
 				break;
 			case 1:
 				handDesc += " of " + Card.RANK_NAME[pairRanks[0]] + "'s";
+				if (highRankCtr > 0) {
+					handDesc += " (" + Card.RANK_NAME[highRank[0]] + " kicker)";
+				}
 				break;
 			case 2: 
 				handDesc += " of " + Card.RANK_NAME[pairRanks[0]]+"'s and " + Card.RANK_NAME[pairRanks[1]] + "'s";
+				if (highRankCtr > 0) {
+					handDesc += " (" + Card.RANK_NAME[highRank[0]] + " kicker)";
+				}
 				break;
 			case 3:
 				handDesc += " of " + Card.RANK_NAME[tripRank] + "'s";
+				if (highRankCtr > 0) {
+					handDesc += " (" + Card.RANK_NAME[highRank[0]] + " kicker)";
+				}
 				break;
 			case 4:
-				handDesc = Card.RANK_NAME[straightRank] + " high " + handDesc;
+				handDesc = Card.RANK_NAME[straightRank] + " high straight";
 				break;
 			case 5:
-				handDesc = Card.RANK_NAME[flushRank[0]] + " high " + handDesc;
+				handDesc = Card.RANK_NAME[flushRank[0]] + " high flush";
 				break;
 			case 6:
-				handDesc += " with triple " + Card.RANK_NAME[tripRank] + "'s and a pair of " + Card.RANK_NAME[pairRanks[0]] + "'s";
+				handDesc = "full house: " + Card.RANK_NAME[tripRank] + "'s full of " + Card.RANK_NAME[pairRanks[0]] + "'s";
 				break;
 			case 7:
-				handDesc = Card.RANK_NAME[quadRank] + " high " + handDesc;
+				handDesc = "four " + Card.RANK_NAME[quadRank] + "'s";
 				break;
 			case 8:
-				handDesc = Card.RANK_NAME[straightRank] + " high " + handDesc;
+				handDesc = Card.RANK_NAME[straightRank] + " high straight flush";
 				break;
-			default:
+			case 9:
+				handDesc = "royal flush";
 				break;
 			}
 		}

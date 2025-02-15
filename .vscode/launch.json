@@ -23,30 +23,6 @@
                 "${workspaceFolder}/lib/base/minim/tritonus_aos.jar",
                 "${workspaceFolder}/lib/base/minim/tritonus_share.jar"
             ]
-        },
-        {
-            "type": "java",
-            "name": "Run All Tests",
-            "request": "launch",
-            "mainClass": "org.junit.platform.console.ConsoleLauncher",
-            "args": ["--scan-classpath"],
-            "classpath": [
-                "${workspaceFolder}/build/classes/java/test",
-                "${workspaceFolder}/build/classes/java/main",
-                "${workspaceFolder}/lib/test/junit-jupiter-api-5.10.1.jar",
-                "${workspaceFolder}/lib/test/junit-jupiter-engine-5.10.1.jar",
-                "${workspaceFolder}/lib/test/junit-platform-commons-1.10.1.jar",
-                "${workspaceFolder}/lib/test/opentest4j-1.3.0.jar",
-                "${workspaceFolder}/lib/base/core/core.jar",
-                "${workspaceFolder}/lib/base/net/net.jar",
-                "${workspaceFolder}/lib/base/minim/jl1.0.jar",
-                "${workspaceFolder}/lib/base/minim/jsminim.jar",
-                "${workspaceFolder}/lib/base/minim/minim-spi.jar",
-                "${workspaceFolder}/lib/base/minim/minim.jar",
-                "${workspaceFolder}/lib/base/minim/mp3spi1.9.4.jar",
-                "${workspaceFolder}/lib/base/minim/tritonus_aos.jar",
-                "${workspaceFolder}/lib/base/minim/tritonus_share.jar"
-            ]
         }
     ]
 }

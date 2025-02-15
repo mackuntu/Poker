@@ -9,18 +9,31 @@ import java.util.Random;
 
 public class Dealer {
 	/** The deck of cards represented as indices (0-51) */
-	ArrayList<Integer> dealer;
+	private final ArrayList<Integer> dealer;
+	private final Random random;
 
 	/**
 	 * Creates a new dealer with a fresh deck of 52 cards.
 	 * Cards are represented as integers from 0 to 51.
 	 */
-	public Dealer()
-	{
-		this.dealer = new ArrayList<Integer>(52);
-		for(int i = 0; i < 52; i++)
-		{
+	public Dealer() {
+		this(false);
+	}
+
+	/**
+	 * Creates a new dealer with a fresh deck of 52 cards.
+	 * @param testMode If true, uses a fixed seed for random number generation
+	 */
+	public Dealer(boolean testMode) {
+		this.dealer = new ArrayList<>(52);
+		this.random = testMode ? new Random(42) : new Random();
+		
+		for(int i = 0; i < 52; i++) {
 			dealer.add(i);
+		}
+		
+		if (testMode) {
+			shuffle(); // Initial shuffle with fixed seed
 		}
 	}
 	
@@ -29,10 +42,8 @@ public class Dealer {
 	 * Randomly selects a card from the remaining cards.
 	 * @return The index of the dealt card (0-51)
 	 */
-	public int getCard()
-	{
-		Random r = new Random();
-		int card = r.nextInt(dealer.size());
+	public int getCard() {
+		int card = random.nextInt(dealer.size());
 		return dealer.remove(card);
 	}
 
@@ -49,9 +60,8 @@ public class Dealer {
 	 * Uses the Fisher-Yates shuffle algorithm.
 	 */
 	public void shuffle() {
-		Random r = new Random();
 		for (int i = dealer.size() - 1; i > 0; i--) {
-			int j = r.nextInt(i + 1);
+			int j = random.nextInt(i + 1);
 			// Swap elements
 			int temp = dealer.get(i);
 			dealer.set(i, dealer.get(j));
