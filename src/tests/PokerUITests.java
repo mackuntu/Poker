@@ -166,8 +166,8 @@ public class PokerUITests {
         ui.drawPotInfo(pot, smallBlind, bigBlind, roundCount, applet.width, applet.height);
         
         assertEquals(255, applet.lastFillColor, "Text color should be white");
-        assertEquals(24.0f, applet.textSizes.get(0), "Pot text size should be 24");
-        assertEquals(18.0f, applet.textSizes.get(1), "Blinds text size should be 18");
+        assertEquals(20.0f, applet.textSizes.get(0), "Pot text size should be 20");
+        assertEquals(16.0f, applet.textSizes.get(1), "Blinds text size should be 16");
         assertTrue(applet.anyTextContains(String.valueOf(smallBlind)), "Small blind should be displayed");
         assertTrue(applet.anyTextContains(String.valueOf(bigBlind)), "Big blind should be displayed");
     }

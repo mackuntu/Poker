@@ -118,6 +118,7 @@ public class Player {
 	
 	// Simple getters/setters
 	public String getName() { return name; }
+	public PlayerStrategy getStrategy() { return strategy; }
 	public int getMoney() { return money; }
 	public void setMoney(int money) { 
 		this.money = money;

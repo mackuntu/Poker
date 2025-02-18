@@ -62,7 +62,7 @@ public class Poker extends PApplet {
 		deckImages = new PImage[54];
 		
 		for (int suite = 0; suite < 4; suite++) {
-			for (int rank = 1; rank < 14; rank++) {
+			for (int rank = 2; rank < 15; rank++) {
 				Card newCard = new Card(rank, suite);
 				if (rank == 1) {
 					deckImages[newCard.hashCode()] = allCards.get(0, suite * 118, 84, 118);
