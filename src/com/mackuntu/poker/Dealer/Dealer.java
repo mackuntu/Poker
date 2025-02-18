@@ -43,8 +43,15 @@ public class Dealer {
 	 * @return The index of the dealt card (0-51)
 	 */
 	public int getCard() {
+		if (dealer.isEmpty()) {
+			throw new IllegalStateException("No cards left in deck");
+		}
 		int card = random.nextInt(dealer.size());
-		return dealer.remove(card);
+		int cardValue = dealer.remove(card);
+		if (cardValue < 0 || cardValue > 51) {
+			throw new IllegalStateException("Invalid card value: " + cardValue);
+		}
+		return cardValue;
 	}
 
 	/**

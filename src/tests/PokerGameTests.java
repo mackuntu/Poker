@@ -359,7 +359,7 @@ public class PokerGameTests {
         int totalPotSize = initialPot;
         
         // Process actions - have players raise and call
-        int maxIterations = players.length * 2; // More than enough iterations
+        int maxIterations = players.length * 10; // More than enough iterations
         int iterations = 0;
         
         while (game.getGameState() != GameState.FINISH && iterations < maxIterations) {

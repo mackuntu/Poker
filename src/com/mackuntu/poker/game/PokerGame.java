@@ -43,13 +43,19 @@ public class PokerGame {
         }
     }
     
-    public boolean hasEnoughActivePlayers() {
-        return playerManager.getActivePlayerCount() >= 2;
+    public boolean hasEnoughPlayersWithMoney() {
+        int count = 0;
+        for (Player player : players) {
+            if (player.getMoney() > 0) {
+                count++;
+            }
+        }
+        return count >= 2;
     }
 
     public void startNewHand() {
         // First check if we have enough players with money
-        if (!hasEnoughActivePlayers()) {
+        if (!hasEnoughPlayersWithMoney()) {
             state = GameState.FINISH;
             addHandAnalysis("Game over - not enough players with money to continue");
             return;
@@ -64,20 +70,20 @@ public class PokerGame {
         
         // Reset game state
         state = GameState.START;
-        playerManager.reinitializePlayers();
+        playerManager.reinitializePlayers();  // This will make all players with money active for the new hand
         bettingManager.initializeNewHand();
         cardManager.initializeNewHand();
         handAnalysis.clear();
         
         // Find next valid small blind position (player must have money)
         int smallBlindPos = (dealerManager.getDealerPosition() + 1) % players.length;
-        while (!playerManager.isPlayerActive(smallBlindPos)) {
+        while (players[smallBlindPos].getMoney() <= 0) {
             smallBlindPos = (smallBlindPos + 1) % players.length;
         }
         
         // Find next valid big blind position (player must have money)
         int bigBlindPos = (smallBlindPos + 1) % players.length;
-        while (!playerManager.isPlayerActive(bigBlindPos)) {
+        while (players[bigBlindPos].getMoney() <= 0) {
             bigBlindPos = (bigBlindPos + 1) % players.length;
         }
         
@@ -100,7 +106,7 @@ public class PokerGame {
         
         // Set initial player to first player after big blind with money
         currentPlayer = (bigBlindPos + 1) % players.length;
-        while (!playerManager.isPlayerActive(currentPlayer)) {
+        while (players[currentPlayer].getMoney() <= 0) {
             currentPlayer = (currentPlayer + 1) % players.length;
         }
     }
@@ -184,7 +190,15 @@ public class PokerGame {
 
     public boolean processNextAction() {
         if (state == GameState.FINISH) {
-            System.out.println("In FINISH state - advancing dealer and starting new hand");
+            System.out.println("In FINISH state - checking if game can continue");
+            
+            // Check if game is truly over (not enough players with money)
+            if (!hasEnoughPlayersWithMoney()) {
+                System.out.println("Game is over - not enough players with money");
+                return false;  // Signal that no more actions can be taken
+            }
+            
+            System.out.println("Starting new hand");
             dealerManager.advanceDealer(playerManager);
             startNewHand();
             return true;
@@ -209,8 +223,14 @@ public class PokerGame {
         System.out.println("Action taken: " + actionTaken);
         
         if (!actionTaken) {
-            System.out.println("Action was not valid/processed");
-            return false;
+            System.out.println("Invalid action: " + playerAction + ". Forcing fold.");
+            // Force a fold if the player makes an invalid action
+            playerAction = Action.FOLD;
+            actionTaken = bettingManager.processAction(playerAction, currentPlayer);
+            if (!actionTaken) {
+                System.out.println("Critical error: Could not process fold action");
+                return false;
+            }
         }
 
         // Record the action

@@ -6,11 +6,22 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Poker",
+            "request": "launch",
+            "mainClass": "com.mackuntu.poker.Engine.Poker",
+            "projectName": "Poker"
+        },
+        {
+            "type": "java",
             "name": "Run Poker Game",
             "request": "launch",
             "mainClass": "processing.core.PApplet",
-            "args": ["com.mackuntu.poker.Engine.Poker"],
-            "vmArgs": ["-ea"],
+            "args": [
+                "com.mackuntu.poker.Engine.Poker"
+            ],
+            "vmArgs": [
+                "-ea"
+            ],
             "classpath": [
                 "${workspaceFolder}/build/classes/java/main",
                 "${workspaceFolder}/lib/base/core/core.jar",

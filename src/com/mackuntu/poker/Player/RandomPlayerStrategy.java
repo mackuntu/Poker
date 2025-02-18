@@ -8,16 +8,40 @@ public class RandomPlayerStrategy implements PlayerStrategy {
     
     @Override
     public Action decideAction(GameContext context) {
-        // 25% chance each for FOLD, CHECK, CALL, RAISE
-        int choice = random.nextInt(4);
-        switch (choice) {
-            case 0: return Action.FOLD;
-            case 1: return Action.CHECK;
-            case 2: return Action.CALL;
-            default:
+        int toCall = context.getCurrentBet() - context.getCommitted();
+        
+        // If there's a bet to call
+        if (toCall > 0) {
+            // 40% chance to call, 20% chance to raise, 40% to fold
+            double rand = random.nextDouble();
+            
+            if (rand < 0.4 && toCall <= context.getPlayerMoney()) {
+                return Action.CALL;
+            } else if (rand < 0.6 && context.getPlayerMoney() > toCall * 2) {
                 Action raise = Action.RAISE;
-                raise.setAmount(context.getCurrentBet() * 2);  // Double the current bet
+                // Raise between 2x and 3x the current bet
+                int raiseAmount = context.getCurrentBet() * 2 + 
+                    random.nextInt(context.getCurrentBet());
+                raiseAmount = Math.min(raiseAmount, context.getPlayerMoney());
+                raise.setAmount(raiseAmount);
                 return raise;
+            } else {
+                return Action.FOLD;
+            }
+        }
+        
+        // No bet to call - can check or raise
+        if (random.nextDouble() < 0.3) {
+            Action raise = Action.RAISE;
+            // Random raise between 2x and 4x the big blind
+            int raiseAmount = Math.min(
+                context.getPlayerMoney(),
+                context.getCurrentBet() + (random.nextInt(3) + 2) * context.getCurrentBet()
+            );
+            raise.setAmount(raiseAmount);
+            return raise;
+        } else {
+            return Action.CHECK;
         }
     }
 } 

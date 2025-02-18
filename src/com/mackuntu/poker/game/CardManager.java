@@ -30,11 +30,10 @@ public class CardManager {
     }
     
     private Card createCard(int cardIndex) {
-        int suite = cardIndex / 13;
-        int rank = (cardIndex % 13) + 1;
+        int suite = cardIndex / Card.TOTAL_RANKS;
+        int rank = (cardIndex % Card.TOTAL_RANKS) + 2; // +2 since ranks start at 2
         return new Card(rank, suite);
     }
-    
     public void dealInitialCards(int dealerPosition) {
         // Deal two cards to each player with money
         for (int i = 0; i < players.length; i++) {
@@ -79,7 +78,7 @@ public class CardManager {
     private void addCardToActivePlayers(Card card) {
         for (Player player : players) {
             if (!player.isFolded()) {
-                player.addCard(card);
+                player.addCard(new Card(card.getNum() + 1, card.getSuite()));
             }
         }
     }

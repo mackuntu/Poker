@@ -12,13 +12,16 @@ public class StandardBettingRules implements BettingRules {
     
     @Override
     public boolean canCheck(Player player) {
-        return player.getCommitted() == currentBet;
+        // Can only check if player has matched the current bet
+        // AND there is no current bet to call
+        return player.getCommitted() == currentBet && currentBet == 0;
     }
     
     @Override
     public boolean canCall(Player player) {
         int toCall = currentBet - player.getCommitted();
-        return toCall >= 0 && toCall <= player.getMoney();
+        // Can call if there's a bet to match and player has enough money
+        return toCall > 0 && toCall <= player.getMoney();
     }
     
     @Override
@@ -28,7 +31,12 @@ public class StandardBettingRules implements BettingRules {
         }
         
         int totalNeeded = amount - player.getCommitted();
-        return totalNeeded > 0 && totalNeeded <= player.getMoney() && 
+        // Can raise if:
+        // 1. Amount is more than current bet
+        // 2. Player has enough money
+        // 3. Raise amount meets minimum raise requirement
+        return totalNeeded > 0 && 
+               totalNeeded <= player.getMoney() && 
                (amount - currentBet) >= minRaise;
     }
     
