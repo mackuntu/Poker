@@ -4,6 +4,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import java.util.concurrent.TimeUnit;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import com.mackuntu.poker.Card.Card;
 import com.mackuntu.poker.Player.Player;
@@ -11,6 +15,8 @@ import com.mackuntu.poker.Action.Action;
 import com.mackuntu.poker.game.GameState;
 import com.mackuntu.poker.game.PokerGame;
 import com.mackuntu.poker.Player.TestStrategy;
+import com.mackuntu.poker.Evaluator.HandEvaluator;
+import com.mackuntu.poker.game.CardManager;
 
 public class PokerGameTests {
     private PokerGame game;
@@ -409,5 +415,97 @@ public class PokerGameTests {
                     "Player " + i + " should not have posted any blinds");
             }
         }
+    }
+
+    @Test
+    public void testCommunityCardDealing() {
+        game.startNewHand();
+        
+        // Initially there should be no community cards
+        assertTrue(game.getCardManager().getCommunityCards().isEmpty(), 
+            "No community cards at start of hand");
+        
+        // Set all players to call to progress the game
+        for (int i = 0; i < players.length; i++) {
+            TestStrategy strategy = (TestStrategy) players[i].getStrategy();
+            Action callAction = Action.CALL;
+            callAction.setAmount(game.getBigBlind());
+            strategy.setForcedAction(callAction);
+        }
+        
+        // Process until flop
+        while (game.getGameState() == GameState.START) {
+            game.processNextAction();
+        }
+        
+        // Check flop (should be 3 cards)
+        assertEquals(3, game.getCardManager().getCommunityCards().size(), 
+            "Flop should have 3 cards");
+        
+        // Process until turn
+        while (game.getGameState() == GameState.FLOP) {
+            game.processNextAction();
+        }
+        
+        // Check turn (should be 4 cards)
+        assertEquals(4, game.getCardManager().getCommunityCards().size(), 
+            "Turn should have 4 cards");
+        
+        // Process until river
+        while (game.getGameState() == GameState.TURN) {
+            game.processNextAction();
+        }
+        
+        // Check river (should be 5 cards)
+        assertEquals(5, game.getCardManager().getCommunityCards().size(), 
+            "River should have 5 cards");
+        
+        // Verify all cards are unique
+        List<Card> communityCards = game.getCardManager().getCommunityCards();
+        Set<Card> uniqueCards = new HashSet<>(communityCards);
+        assertEquals(communityCards.size(), uniqueCards.size(), 
+            "All community cards should be unique");
+    }
+
+    @Test
+    public void testHandEvaluationWithCommunityCards() {
+        game.startNewHand();
+        CardManager cardManager = game.getCardManager();
+        
+        // Set up a scenario where community cards make a flush
+        Card[] communityFlush = {
+            new Card(2, 0),  // 2 of Spades
+            new Card(5, 0),  // 5 of Spades
+            new Card(7, 0),  // 7 of Spades
+            new Card(9, 0),  // 9 of Spades
+            new Card(13, 1)  // King of Hearts
+        };
+        
+        // Give player 0 two spades for a flush
+        Card[] playerCards = {
+            new Card(3, 0),  // 3 of Spades
+            new Card(4, 0)   // 4 of Spades
+        };
+        
+        // Force these cards in test mode
+        for (Card card : playerCards) {
+            players[0].addCard(card);
+        }
+        
+        // Add community cards one by one
+        for (Card card : communityFlush) {
+            cardManager.getCommunityCards().add(card);
+        }
+        
+        // Evaluate the hand
+        ArrayList<Card> allCards = new ArrayList<>();
+        allCards.addAll(Arrays.asList(playerCards));
+        allCards.addAll(Arrays.asList(communityFlush));
+        
+        HandEvaluator evaluator = new HandEvaluator(allCards);
+        
+        // Should be a flush
+        assertEquals(5, evaluator.getRanking(), "Should be a flush");
+        assertTrue(evaluator.getString().contains("flush"), "Hand should be evaluated as a flush");
     }
 } 
